@@ -3,9 +3,9 @@ Option Explicit
 
 Sub Tester()
 
-'Call ChooseProgram("University Ref")
+Call ChooseProgram("University Ref")
 'Call ChooseProgram("College Ref")
-Call ChooseProgram("Transfer Ref")
+'Call ChooseProgram("Transfer Ref")
 
 End Sub
 
@@ -16,6 +16,9 @@ Sub TesterClearTables()
     Dim RecordsSheet As Worksheet
     Dim ReportSheet As Worksheet
     Dim RosterSheet As Worksheet
+    Dim DirectorySheet As Worksheet
+    Dim NarrativeSheet As Worksheet
+    Dim OtherSheet As Worksheet
     Dim ClearTable As ListObject
     Dim btn As Button
     
@@ -23,6 +26,9 @@ Sub TesterClearTables()
     Set RecordsSheet = Worksheets("Records Page")
     Set ReportSheet = Worksheets("Report Page")
     Set RosterSheet = Worksheets("Roster Page")
+    Set DirectorySheet = Worksheets("Directory Page")
+    Set NarrativeSheet = Worksheets("Narrative Page")
+    Set OtherSheet = Worksheets("Other Page")
     
     On Error Resume Next
     
@@ -57,6 +63,30 @@ Sub TesterClearTables()
         .Buttons.Delete
         .Columns.UseStandardWidth = True
     End With
+    
+    Call UnprotectSheet(DirectorySheet)
+    With DirectorySheet
+        .Cells.ClearContents
+        .Cells.ClearFormats
+        .Buttons.Delete
+        .Columns.UseStandardWidth = True
+    End With
+    
+    Call UnprotectSheet(NarrativeSheet)
+    With NarrativeSheet
+        .Cells.ClearContents
+        .Cells.ClearFormats
+        .Buttons.Delete
+        .Columns.UseStandardWidth = True
+    End With
+    
+    'Call UnprotectSheet(OtherSheet)
+    'With OtherSheet
+        '.Cells.ClearContents
+        '.Cells.ClearFormats
+        '.Buttons.Delete
+        '.Columns.UseStandardWidth = True
+    'End With
     
     If Not Worksheets(1).Name = "University Ref" Then
         Worksheets(1).Name = "University Ref"
@@ -138,23 +168,16 @@ Sub ChooseProgram(ProgramString As String)
         With RefSheet
             Set TableGenTable = .ListObjects(TableString & "TableGen")
             Set RangeGenTable = .ListObjects(TableString & "RangeGen")
-        
-            'If ProgramString = "University Ref" Then
-                'Set TableGenTable = .ListObjects("UniversityTableGen")
-                'Set RangeGenTable = .ListObjects("UniversityRangeGen")
-            'ElseIf ProgramString = "Transfer Ref" Then
-                'Set TableGenTable = .ListObjects("TransferTableGen")
-                'Set RangeGenTable = .ListObjects("TransferRangeGen")
-            'ElseIf ProgramString = "College Ref" Then
-                'Set TableGenTable = .ListObjects("CollegeTableGen")
-                'Set RangeGenTable = .ListObjects("CollegeRangeGen")
-            'End If
-            
             Set SearchRange = TableGenTable.ListColumns("First Header").DataBodyRange
             
             'The TableGenTable as the names of each header in the 1st column. Find the header, first blank column after, and last row
             For Each c In SearchRange
-                Set StartCell = .Range("1:1").Find(c.Value, , xlValues, xlWhole)
+                If StopCell Is Nothing Then
+                    Set StartCell = .Range("1:1").Find(c.Value, , xlValues, xlWhole)
+                Else
+                    Set StartCell = .Range(StopCell, Cells(1, Columns.Count).Address).Find(c.Value, , xlValues, xlWhole)
+                End If
+                
                 If Not StartCell Is Nothing Then
                     'Define table range
                     Set StopCell = .Range(StartCell, Cells(1, Columns.Count).Address).Find("", , xlValues, xlWhole) 'This is a blank cell one past the last column
@@ -205,6 +228,10 @@ Sub ChooseProgram(ProgramString As String)
     
     Call UnprotectSheet(RecordsSheet)
     Call RecordsSheetText
+    
+    'Populate the DirectorySheet, NarrativeSheet, and OtherSheet
+    Call DirectorySheetTables(ProgramString)
+    Call NarrativeSheetTables(ProgramString)
     
     'Make sure the workbook can be edited
     Call ResetProtection
@@ -333,8 +360,6 @@ Sub CoverSheetText(RefSheet As Worksheet, CoverSheet As Worksheet, ProgramString
     
     PasteRange.Columns.AutoFit
     
-    
-    
 End Sub
 
 Sub CoverSheetButtons(ProgramString)
@@ -385,6 +410,181 @@ Sub CoverSheetButtons(ProgramString)
         '.Name = "CoverImportButton"
     'End With
         
+End Sub
+
+Sub DirectorySheetTables(ProgramString As String)
+'Put in the tables for staff, teachers, schools, etc.
+    
+    Dim DirectorySheet As Worksheet
+    Dim RefSheet As Worksheet
+    Dim CopyRange As Range
+    Dim PasteRange As Range
+    Dim c As Range
+    Dim d As Range
+    Dim i As Long
+    Dim j As Long
+    Dim TempString As String
+    Dim TempTable As ListObject
+    Dim TableNameArray() As Variant
+
+    Set DirectorySheet = Worksheets("Directory Page")
+    Set RefSheet = Worksheets("Ref Tables")
+ 
+    'Copy over the tables for school, teachers, and staff
+    If ProgramString = "College Ref" Then
+        ReDim TableNameArray(1 To 3, 1 To 3)
+            TableNameArray(1, 1) = "School Directory"
+            TableNameArray(2, 1) = "Teacher Directory"
+            TableNameArray(3, 1) = "Staff and Others Directory"
+            
+            TableNameArray(1, 2) = "Sum of students should match the Report Page"
+            TableNameArray(2, 2) = "All current teachers"
+            TableNameArray(3, 2) = "Center staff, mentors, assistants, and so on"
+            
+            TableNameArray(1, 3) = "SchoolsTable"
+            TableNameArray(2, 3) = "TeachersTable"
+            TableNameArray(3, 3) = "DirectoryTable"
+    Else
+        ReDim TableNameArray(1 To 2, 1 To 3)
+            TableNameArray(1, 1) = "Staff and Others Directory"
+            TableNameArray(2, 1) = "Mentors"
+            
+            TableNameArray(1, 2) = "Center staff, faculty sponsors, assistants, and so on"
+            TableNameArray(2, 2) = "Staff and Others Directory"
+            
+            TableNameArray(1, 3) = "DirectoryTable"
+            TableNameArray(2, 3) = "MentorTable"
+    End If
+    
+    'Loop through, adding tables and tedxt
+    Set c = DirectorySheet.Range("A1")
+    
+    For i = LBound(TableNameArray, 1) To UBound(TableNameArray, 1)
+        For j = LBound(TableNameArray, 2) To UBound(TableNameArray, 2)
+            TempString = TableNameArray(i, j)
+            
+            'Check if it's the name of a table. If not, paste the text
+            For Each TempTable In RefSheet.ListObjects
+                If TempTable.Name = TempString Then
+                    GoTo CopyTable
+                End If
+            Next TempTable
+            
+            c.Offset(j - 1, 0) = TempString
+            GoTo NextElement
+CopyTable:
+            'Copy over table text
+            Set TempTable = RefSheet.ListObjects(TempString)
+            Set CopyRange = TempTable.Range
+            Set PasteRange = c.Resize(CopyRange.Rows.Count, CopyRange.Columns.Count).Offset(j - 1, 0)
+    
+            PasteRange.Value = CopyRange.Value
+            
+            'Make a table. Can't call the function since it will unlist everything but the last table
+            Set PasteRange = PasteRange.Resize(PasteRange.Rows.Count + 3, PasteRange.Columns.Count) 'Adding blank rows
+            Set TempTable = DirectorySheet.ListObjects.Add(SourceType:=xlSrcRange, Source:=PasteRange, _
+                xlListObjectHasHeaders:=xlYes)
+NextElement:
+        Next j
+        
+        'Formatting
+        With c
+            .Font.Bold = True
+            .Borders(xlEdgeBottom).LineStyle = xlContinuous
+            .Borders(xlEdgeBottom).Weight = xlMedium
+            .Columns.AutoFit
+        End With
+        
+        'Move c two columns past the table
+        Set c = c.Offset(0, PasteRange.Columns.Count + 1)
+    Next i
+
+End Sub
+
+Sub NarrativeSheetTables(ProgramString As String)
+'Tables for highlights, goals, educatorPD, parent development
+
+    Dim NarrativeSheet As Worksheet
+    Dim RefSheet As Worksheet
+    Dim CopyRange As Range
+    Dim PasteRange As Range
+    Dim c As Range
+    Dim d As Range
+    Dim i As Long
+    Dim j As Long
+    Dim TempString As String
+    Dim TempTable As ListObject
+    Dim TableNameArray() As Variant
+
+    Set NarrativeSheet = Worksheets("Narrative Page")
+    Set RefSheet = Worksheets("Ref Tables")
+
+    'Make an array of table names and text to insert
+    ReDim TableNameArray(1 To 3, 1 To 3)
+        TableNameArray(1, 1) = "Term Highlights"
+        TableNameArray(1, 2) = "Yearly Goals"
+        TableNameArray(1, 3) = "Educator PD"
+            
+        TableNameArray(2, 1) = "3-5 highlights, describe the nature and impact of the activity"
+        TableNameArray(2, 2) = "Goals for the academic year"
+        TableNameArray(2, 3) = "MESA Center staff and teachers/faculty"
+            
+        TableNameArray(3, 1) = "HighlightTable"
+        TableNameArray(3, 2) = "GoalsTable"
+        TableNameArray(3, 3) = "EducatorPDTable"
+        
+    'Add Parent Development for College Prep
+    If ProgramString = "College Ref" Then
+        ReDim Preserve TableNameArray(1 To 3, 1 To 4) 'Swapped because only the 2nd dimension can be ReDim'd
+        
+        TableNameArray(1, 4) = "Parent Leadership Development, Workshops"
+        TableNameArray(2, 4) = "Parents of MESA students"
+        TableNameArray(3, 4) = "ParentDevelopmentTable"
+    End If
+   'Loop through, adding tables and tedxt
+    Set c = NarrativeSheet.Range("A1")
+    
+    For i = LBound(TableNameArray, 2) To UBound(TableNameArray, 2)
+        For j = LBound(TableNameArray, 1) To UBound(TableNameArray, 1)
+            TempString = TableNameArray(j, i)
+            
+            'Check if it's the name of a table. If not, paste the text
+            For Each TempTable In RefSheet.ListObjects
+                If TempTable.Name = TempString Then
+                    GoTo CopyTable
+                End If
+            Next TempTable
+            
+            c.Offset(j - 1, 0) = TempString
+            GoTo NextElement
+CopyTable:
+            'Copy over table text
+            Set TempTable = RefSheet.ListObjects(TempString)
+            Set CopyRange = TempTable.Range
+            Set PasteRange = c.Resize(CopyRange.Rows.Count, CopyRange.Columns.Count).Offset(j - 1, 0)
+    
+            PasteRange.Value = CopyRange.Value
+            
+            'Make a table. Can't call the function since it will unlist everything but the last table
+            Set PasteRange = PasteRange.Resize(PasteRange.Rows.Count + 3, PasteRange.Columns.Count) 'Adding blank rows
+            Set TempTable = NarrativeSheet.ListObjects.Add(SourceType:=xlSrcRange, Source:=PasteRange, _
+                xlListObjectHasHeaders:=xlYes)
+NextElement:
+        Next j
+        
+        'Formatting
+        With c
+            .Font.Bold = True
+            .Borders(xlEdgeBottom).LineStyle = xlContinuous
+            .Borders(xlEdgeBottom).Weight = xlMedium
+            .Columns.AutoFit
+        End With
+        
+        'Move c two columns past the table
+        Set c = c.Offset(0, PasteRange.Columns.Count + 1)
+    Next i
+    
+
 End Sub
 
 Sub RosterSheetButtons()

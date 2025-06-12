@@ -64,6 +64,12 @@ Footer:
 
 End Function
 
+Function CheckRA(DirectorySheet As Worksheet) As Long
+'Add check for RA name and email
+
+
+End Function
+
 Function CheckRecords(RecordsSheet As Worksheet) As Long
 'Checks if there are any students on the Records Page
 'Three possibilities:

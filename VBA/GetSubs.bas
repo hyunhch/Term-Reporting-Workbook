@@ -66,7 +66,6 @@ Function GetReadyToExport() As Variant
 'Checks the Cover, Report, Roster, Records, Narrative, and Directory
 'Returns an array that shows if they're filled out or not
 
-
     Dim CoverSheet As Worksheet
     Dim RosterSheet As Worksheet
     Dim RecordsSheet As Worksheet
