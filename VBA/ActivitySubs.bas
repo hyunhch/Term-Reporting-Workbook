@@ -21,7 +21,8 @@ Function ActivityAddStudents(ActivitySheet As Worksheet) As Range
     Set ActivityTable = ActivitySheet.ListObjects(1)
     
     'Find checked students on the RosterTable
-    Set RosterCheckRange = FindChecks(RosterTable.ListColumns("Select").DataBodyRange.Offset(0, 1))
+    Set c = RosterTable.ListColumns("Select").DataBodyRange.SpecialCells(xlCellTypeVisible)
+    Set RosterCheckRange = FindChecks(c.Offset(0, 1))
     
     'If there are no students on the ActivitySheet, add all of them
     If Not ActivityTable.ListRows.Count > 0 Then
@@ -129,7 +130,7 @@ Function ActivityNewSheet(InfoArray() As Variant, Optional OperationString As St
     
     'Don't pull in from the RosterSheet if we're loading
     If Not OperationString = "Load" Then
-        Set c = FindChecks(RosterTable.ListColumns("Select").DataBodyRange) 'Who is checked on the RosterSheet
+        Set c = FindChecks(RosterTable.ListColumns("Select").DataBodyRange.SpecialCells(xlCellTypeVisible)) 'Who is checked on the RosterSheet
         
         If Not c Is Nothing Then
             Set CopyRange = Intersect(c.EntireRow, RosterTable.DataBodyRange)
@@ -269,7 +270,7 @@ Sub ActivityPullAttendance(ActivitySheet As Worksheet, LabelCell As Range)
         Set d = FindName(c, ActivityNameRange)
         
         If Not d Is Nothing Then
-            If RecordsSheet.Cells(c.row, RecordsLabelCell.Column) = "1" Then
+            If RecordsSheet.Cells(c.Row, RecordsLabelCell.Column) = "1" Then
                 d.Offset(0, -1).Value = "a"
             End If
         End If
@@ -360,13 +361,18 @@ Sub ActivitySave(ActivitySheet As Worksheet, LabelCell As Range)
     Set RecordsSheet = Worksheets("Records Page")
     Set ActivityTable = ActivitySheet.ListObjects(1)
     Set ActivityNameRange = ActivityTable.ListColumns("First").DataBodyRange
-        
+
     'Clear out any existing information
     Set RecordsNameRange = FindRecordsName(RecordsSheet)
     Set RecordsLabelRange = FindRecordsLabel(RecordsSheet, LabelCell) 'This should always be present
     
     RecordsNameRange.Offset(0, RecordsLabelRange.Column - RecordsNameRange.Column).ClearContents
     
+    'If there are no students anymore, skip to tabulating and close the sheet
+    If ActivityNameRange Is Nothing Then
+        GoTo TabulateActivity
+    End If
+
     'Loop through the update attendance
     For Each c In ActivityNameRange
         Set d = FindName(c, RecordsNameRange)
@@ -379,9 +385,13 @@ Sub ActivitySave(ActivitySheet As Worksheet, LabelCell As Range)
             End If
         End If
     Next c
-    
-    'Tabulate
+
+TabulateActivity:
     Call TabulateActivity(LabelCell)
+
+    If ActivityNameRange Is Nothing Then
+        ActivitySheet.Delete
+    End If
 
 Footer:
 

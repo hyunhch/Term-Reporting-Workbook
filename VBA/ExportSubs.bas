@@ -123,7 +123,7 @@ NextStudent:
     'Make a table
     Set c = NewSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
     Set d = NewSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlColumns)
-    Set PasteRange = NewSheet.Range("A1", Cells(c.row, d.Column).Address)
+    Set PasteRange = NewSheet.Range("A1", Cells(c.Row, d.Column).Address)
     
     Call CreateTable(NewSheet, , PasteRange)
     
@@ -203,7 +203,7 @@ Function ExportGenericSheet(OldBook As Workbook, NewBook As Workbook, OldSheet A
     
     'Find the used area, copy over
     LCol = OldSheet.Cells.Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
-    LRow = OldSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).row
+    LRow = OldSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
     
     Set c = OldSheet.Cells(LRow, LCol)
     Set CopyRange = OldSheet.Range("A1", c)
@@ -249,7 +249,7 @@ Function ExportSimpleAttendance(OldBook As Workbook, NewBook As Workbook, Option
 
     'If there is no passed range, we can copy and paste the entire page
     If ExportRange Is Nothing Then
-        LRow = OldRecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).row
+        LRow = OldRecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
         LCol = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
         
         Set c = OldRecordsSheet.Cells(LRow, LCol)
@@ -263,7 +263,7 @@ Function ExportSimpleAttendance(OldBook As Workbook, NewBook As Workbook, Option
         'Grab all of the activities and the headers
         Set c = OldRecordsSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
         Set d = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
-        Set OldRecordsHeaderRange = OldRecordsSheet.Range("A1", Cells(c.row, d.Column).Address)
+        Set OldRecordsHeaderRange = OldRecordsSheet.Range("A1", Cells(c.Row, d.Column).Address)
         
         'Make sure we're on the RecordsSheet. If not, search there for the names to be exported
         If Not ExportRange.Worksheet.Name = "Records Page" Then
@@ -630,8 +630,8 @@ Function ExportToRA() As Long
             GoTo Footer
         End If
     
-    RANameString = DirectorySheet.Cells(c.row, DirectoryTable.ListColumns("Name").Range.Column)
-    RAAddressString = DirectorySheet.Cells(c.row, DirectoryTable.ListColumns("Email").Range.Column)
+    RANameString = DirectorySheet.Cells(c.Row, DirectoryTable.ListColumns("Name").Range.Column)
+    RAAddressString = DirectorySheet.Cells(c.Row, DirectoryTable.ListColumns("Email").Range.Column)
     
     'Director information
     Set c = DirectoryTable.ListColumns("Position").DataBodyRange.Find("Director", , xlValues, xlWhole)
@@ -641,8 +641,8 @@ Function ExportToRA() As Long
             GoTo Footer
         End If
     
-    DirectorNameString = DirectorySheet.Cells(c.row, DirectoryTable.ListColumns("Name").Range.Column)
-    DirectorAddressString = DirectorySheet.Cells(c.row, DirectoryTable.ListColumns("Email").Range.Column)
+    DirectorNameString = DirectorySheet.Cells(c.Row, DirectoryTable.ListColumns("Name").Range.Column)
+    DirectorAddressString = DirectorySheet.Cells(c.Row, DirectoryTable.ListColumns("Email").Range.Column)
 
     'Verify they all have something in them. In the future, validate email addresses
     If Not Len(RANameString) > 0 Or Not Len(RAAddressString) > 0 Or Not Len(DirectorNameString) > 0 Or Not Len(DirectorNameString) > 0 Then

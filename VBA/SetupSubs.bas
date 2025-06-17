@@ -182,7 +182,7 @@ Sub ChooseProgram(ProgramString As String)
                     'Define table range
                     Set StopCell = .Range(StartCell, Cells(1, Columns.Count).Address).Find("", , xlValues, xlWhole) 'This is a blank cell one past the last column
                     Set BotCell = StartCell.EntireColumn.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
-                    Set TableRange = StartCell.Resize(BotCell.row, StopCell.Column - StartCell.Column)
+                    Set TableRange = StartCell.Resize(BotCell.Row, StopCell.Column - StartCell.Column)
                     
                     'Make and name table
                     .ListObjects.Add(xlSrcRange, TableRange, , xlYes).Name = c.Offset(0, -1).Value 'Names of tables are stored one to the left

@@ -265,7 +265,7 @@ Sub TabulateActivity(LabelCell As Range)
     Set RecordsSheet = Worksheets("Records Page")
     Set ReportSheet = Worksheets("Report Page")
     Set RosterSheet = Worksheets("Roster Page")
-    
+
     'Make sure we have students and activities in records
     If CheckRecords(RecordsSheet) > 1 Then
         Call ReportClearAll
@@ -298,7 +298,7 @@ Sub TabulateActivity(LabelCell As Range)
     If RemoveFromReport(ReportLabelRange) <> 1 Then
         GoTo Footer
     End If
-    
+
     'Define the range to tabulate
     Set TabulateRange = FindTabulateRange(RosterSheet, RecordsSheet, RecordsLabelRange)
         If TabulateRange Is Nothing Then 'This happens when there are no students, i.e. after clearing the roster
@@ -307,7 +307,7 @@ Sub TabulateActivity(LabelCell As Range)
    
    'Pass for tabulation add Total and Notes
    Set c = ReportTable.HeaderRowRange.Find("Total", , xlValues, xlWhole)
-   Set ReportTotalRange = ReportSheet.Cells(ReportLabelRange.row, c.Column)
+   Set ReportTotalRange = ReportSheet.Cells(ReportLabelRange.Row, c.Column)
    
    ReportTotalRange.Value = TabulateRange.Cells.Count
    ReportLabelRange.Offset(0, 1).Value = RecordsLabelRange.Offset(1, 0).Value 'Both are one cell away

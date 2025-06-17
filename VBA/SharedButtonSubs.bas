@@ -22,7 +22,7 @@ Sub RemoveSelectedButton()
     End If
     
     Set DelTable = DelSheet.ListObjects(1)
-    Set c = DelTable.ListColumns("Select").DataBodyRange
+    Set c = DelTable.ListColumns("Select").DataBodyRange.SpecialCells(xlCellTypeVisible)
     Set CheckRange = FindChecks(c)
     
     'Different procedures depending on what sheet it's called from

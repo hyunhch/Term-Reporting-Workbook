@@ -140,9 +140,9 @@ Sub ActivityCloseButton()
                 GoTo NextRow
             End If
             
-        If c.Offset(0, -1).Value = "a" And RecordsSheet.Cells(d.row, RecordsLabelRange.Column) = "1" Then
+        If c.Offset(0, -1).Value = "a" And RecordsSheet.Cells(d.Row, RecordsLabelRange.Column) = "1" Then
             GoTo NextRow
-        ElseIf c.Offset(0, -1).Value <> "a" And RecordsSheet.Cells(d.row, RecordsLabelRange.Column) = "0" Then
+        ElseIf c.Offset(0, -1).Value <> "a" And RecordsSheet.Cells(d.Row, RecordsLabelRange.Column) = "0" Then
             GoTo NextRow
         Else
             IsDifferent = True

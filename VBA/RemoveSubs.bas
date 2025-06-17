@@ -66,7 +66,7 @@ Function RemoveFromActivity(ActivitySheet As Worksheet, DelRange As Range) As Lo
     End If
     
     'Otherwise match students, if any. Break if there are no matches
-    Set ActivityDelRange = FindName(DelRange, ActivityDelRange)
+    Set ActivityDelRange = FindName(DelRange, ActivityNameRange)
         If ActivityDelRange Is Nothing Then
             RemoveFromActivity = 0
             
@@ -226,7 +226,7 @@ Function RemoveFromReport(LabelCell As Range) As Long
 
     'Define the rest of the row. Deleting everything from "Notes" column until the end
     Set c = ReportTable.HeaderRowRange.Find("Notes")
-    Set d = ReportSheet.Cells(ReportLabelCell.row, c.Column)
+    Set d = ReportSheet.Cells(ReportLabelCell.Row, c.Column)
     Set ReportDelRange = d.Resize(1, ReportTable.ListColumns.Count - d.Column)
     
     'Remove
@@ -396,7 +396,7 @@ Sub RemoveRows(TargetSheet As Worksheet, FullRange As Range, SearchRange As Rang
     'Not looking at contents because the sub can be called to delete any row
     Set c = FullRange.Rows(1) 'First row
     
-    For i = c.row To FullRange.Rows(FullRange.Rows.Count + 1).row 'In case every row is checked
+    For i = c.Row To FullRange.Rows(FullRange.Rows.Count + 1).Row 'In case every row is checked
         Set d = TargetSheet.Cells(i, SearchRange.Column)
         If d.Interior.Color <> vbRed Then
             Set d = d.Offset(-1, 0) 'Last row

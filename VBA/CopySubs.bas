@@ -76,7 +76,7 @@ Function CopyRows(SourceSheet As Worksheet, SourceRange As Range, TargetSheet As
     Dim i As Long
     
     i = 0
-    For Each c In SourceRange.Rows
+    For Each c In SourceRange.Rows '.SpecialCells(xlCellTypeVisible) This needs to be passed beforehand
         Set CopyRange = c
         Set d = TargetRange.Resize(1, c.Columns.Count)
         Set PasteRange = d.Offset(i, 0)
@@ -225,7 +225,7 @@ Function CopyToReport(ReportSheet As Worksheet, PasteCell As Range, PasteArray A
         
         If Not c Is Nothing Then
             'Paste under the matching header
-            Set d = ReportSheet.Cells(PasteCell.row, c.Column)
+            Set d = ReportSheet.Cells(PasteCell.Row, c.Column)
             d.Value = PasteArray(i, 2)
             Set ReturnRange = BuildRange(d, ReturnRange)
             
@@ -251,7 +251,7 @@ Function CopyToReport(ReportSheet As Worksheet, PasteCell As Range, PasteArray A
     If j > 0 Then
         PasteArray(OtherIndex, 2) = PasteArray(OtherIndex, 2) + j
         Set c = ReportHeaderRange.Find(OtherString, , xlValues, xlWhole)
-        Set d = ReportSheet.Cells(PasteCell.row, c.Column)
+        Set d = ReportSheet.Cells(PasteCell.Row, c.Column)
         
         d.Value = PasteArray(OtherIndex, 2)
         Set ReturnRange = BuildRange(d, ReturnRange)

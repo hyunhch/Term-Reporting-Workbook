@@ -124,7 +124,7 @@ Sub DateValidation(TargetSheet As Worksheet, DateRange As Range)
 'Date greater than 1990
 
     Call UnprotectSheet(TargetSheet)
-
+    
     With DateRange.Validation
         .Delete
         .Add Type:=xlValidateDate, AlertStyle:=xlValidAlertStop, Operator:=xlGreaterEqual, Formula1:="1/1/1990"
@@ -179,6 +179,10 @@ Sub ResetProtection()
             ActivitySheet.Range("B3").Locked = False 'Allow the notes to be editable
         End If
     Next ActivitySheet
+    
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
     
 End Sub
 

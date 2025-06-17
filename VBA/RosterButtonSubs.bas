@@ -132,6 +132,10 @@ Sub RosterClearButton()
     
 Footer:
 
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
 End Sub
 
 Sub RosterParseButton()
@@ -212,7 +216,7 @@ Sub RosterParseButton()
     If Not NewStudentRange Is Nothing Then
         i = NewStudentRange.Cells.Count
     End If
-    
+
     'Make sure there is a table on the ReportSheet
     If CheckTable(ReportSheet) > 2 Then
         Set ReportTable = CreateReportTable

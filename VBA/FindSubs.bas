@@ -91,6 +91,7 @@ Function FindDuplicate(SourceRange As Range) As Range
     Dim NameDict As Object
     
     Set NameDict = CreateObject("Scripting.Dictionary")
+    NameDict.CompareMode = vbTextCompare
 
     'Loop through passed range, read into dictionary
     For Each c In SourceRange.Cells
@@ -129,6 +130,7 @@ Function FindName(SourceRange As Range, TargetRange As Range) As Range
     Dim NameDict As Object
     
     Set NameDict = CreateObject("Scripting.Dictionary")
+    NameDict.CompareMode = vbTextCompare
 
     'Loop through source range, read all unique names into dictionary
     For Each c In SourceRange
@@ -510,7 +512,7 @@ Function FindTableRange(TargetSheet As Worksheet) As Range
     LCol = FCell.EntireRow.Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
     
     'Which column to search can change so search all cells
-    LRow = TargetSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).row
+    LRow = TargetSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
     Set LCell = TargetSheet.Cells(LRow, LCol)
     Set FindTableRange = TargetSheet.Range(FCell, LCell)
 
@@ -560,7 +562,8 @@ Function FindUnique(SourceRange As Range, TargetRange As Range) As Range
     Dim NameString As String
     Dim NameDict As Object
     
-    Set NameDict = CreateObject("Scripting.Dictionary")
+    Set NameDict = CreateObject("Scripting.Dictionary") '
+    NameDict.CompareMode = vbTextCompare
 
     'Loop through source range, read all unique names into dictionary
     For Each c In TargetRange
