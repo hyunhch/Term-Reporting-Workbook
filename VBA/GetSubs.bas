@@ -1,18 +1,6 @@
 Attribute VB_Name = "GetSubs"
 Option Explicit
 
-Function GetVersion() As String
-'Returns the version listed at the end of the file name
-
-    Dim FileName As String
-    Dim TempName As String
-
-    FileName = ThisWorkbook.Name
-    TempName = Left(FileName, InStrRev(FileName, ".") - 1)
-    GetVersion = Right(TempName, Len(TempName) - InStrRev(TempName, " "))
-
-End Function
-
 Function GetCoverInfo() As Variant
 'Grabs the name, date, center, program, and version from the CoverSheet
 'Returns an array with each value
@@ -62,6 +50,45 @@ Footer:
 
 End Function
 
+Function GetImportSheets(CopyBook As Workbook) As Variant
+'Checks a selected file if the Roster, Report, and Records sheets exist
+'Returns each sheet it finds
+'Returns empty elements if the sheet isn't found
+    '(1, i) - Sheet name
+    '(2, i) - Sheet object
+    '(3, i) - 0, to be used later. Set to 1 if importing the sheet is successful
+
+    Dim CopySheet As Worksheet
+    Dim i As Long
+    Dim CopyFilePath As String
+    Dim SheetArray() As Variant
+    
+    'Define the names of the sheet to look for
+    ReDim SheetArray(1 To 3, 1 To 3)
+        SheetArray(1, 1) = "Report Page"
+        SheetArray(2, 1) = "Roster Page"
+        SheetArray(3, 1) = "Records Page"
+    
+    'Loop through sheets. If there are fewer than 3, we can break
+    If CopyBook.Sheets.Count < 3 Then
+        GoTo Footer
+    End If
+
+    For Each CopySheet In CopyBook.Sheets
+        For i = 1 To UBound(SheetArray, 1)
+            If CopySheet.Name = SheetArray(i, 1) Then
+                Set SheetArray(i, 2) = CopyBook.Sheets(CopySheet.Name)
+            End If
+        Next i
+    Next CopySheet
+
+    'Return
+    GetImportSheets = SheetArray
+
+Footer:
+
+End Function
+
 Function GetReadyToExport() As Variant
 'Checks the Cover, Report, Roster, Records, Narrative, and Directory
 'Returns an array that shows if they're filled out or not
@@ -104,6 +131,29 @@ Function GetReadyToExport() As Variant
         
     GetReadyToExport = ReadyArray
         
+Footer:
+
+End Function
+
+Function GetVersion() As String
+'Returns the version listed in the change log
+
+    Dim ChangeSheet As Worksheet
+    Dim c As Range
+    
+    Set ChangeSheet = Worksheets("Change Log")
+    Set c = ChangeSheet.Range("A1")
+    
+    'If, for some reason, there's nothing there
+    If Not InStr(c.Value, "Version") > 0 Then
+        Set c = ChangeSheet.Range("A:A").Find("Version", , xlValues, xlPart)
+        GetVersion = "Unknown version - " & c.Value & "+"
+        
+        GoTo Footer
+    End If
+
+    GetVersion = c.Value
+    
 Footer:
 
 End Function

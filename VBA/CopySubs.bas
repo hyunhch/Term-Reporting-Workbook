@@ -90,52 +90,6 @@ Function CopyRows(SourceSheet As Worksheet, SourceRange As Range, TargetSheet As
     
 End Function
 
-Function CopyToRecords(RosterSheet As Worksheet, RecordsSheet As Worksheet) As Range
-'Copies new students from the RosterSheet to the RecordsSheet
-'Duplicates are ignored, blank rows and duplicates are deleted
-'Returns the range of copied names
-
-    Dim FullNameRange As Range
-    Dim DelRange As Range
-    Dim RosterNameRange As Range
-    Dim RecordsNameRange As Range
-    Dim c As Range
-    Dim d As Range
-    Dim CopyRange As Range
-    Dim PasteRange As Range
-    Dim RosterTable As ListObject
-    
-    Set RosterTable = RosterSheet.ListObjects(1)
-    Set RosterNameRange = RosterTable.ListColumns("First").DataBodyRange
-    Set RecordsNameRange = FindRecordsName(RecordsSheet)
-    
-    'Find the bottom of the name list
-    Set c = RecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
-    Set PasteRange = c.Offset(1, 0)
-    
-    'If there are no names, simply copy everything
-    If c.Value = "H BREAK" Then
-        Set d = RosterNameRange
-    Else
-        'Find all non-duplicative students and copy over
-        Set d = FindUnique(RosterNameRange, RecordsNameRange)
-    End If
-
-    If Not d Is Nothing Then
-        Set CopyRange = Union(d, d.Offset(0, 1)) 'first and last names
-        Set CopyToRecords = CopyRows(RosterSheet, CopyRange, RecordsSheet, PasteRange)
-    End If
-    
-    'Delete blanks and duplicates
-    Set RecordsNameRange = FindRecordsName(RecordsSheet)
-    Set FullNameRange = RecordsNameRange.Resize(RecordsNameRange.Rows.Count, 2) 'Both columns
-    
-    Call RemoveDupeBlank(RecordsSheet, FullNameRange, RecordsNameRange)
-       
-Footer:
-
-End Function
-
 Function CopyToActivity(RosterSheet As Worksheet, ActivitySheet As Worksheet, Optional CopyNames As Range) As Range
 'Copies non-duplicative selected students from the RosterSheet to an ActivitySheet
 'Returns the first names of copied students
@@ -185,6 +139,52 @@ Function CopyToActivity(RosterSheet As Worksheet, ActivitySheet As Worksheet, Op
     'Return
     Set CopyToActivity = CopyRows(RosterSheet, CopyRange, ActivitySheet, PasteRange)
     
+Footer:
+
+End Function
+
+Function CopyToRecords(RosterSheet As Worksheet, RecordsSheet As Worksheet) As Range
+'Copies new students from the RosterSheet to the RecordsSheet
+'Duplicates are ignored, blank rows and duplicates are deleted
+'Returns the range of copied names
+
+    Dim FullNameRange As Range
+    Dim DelRange As Range
+    Dim RosterNameRange As Range
+    Dim RecordsNameRange As Range
+    Dim c As Range
+    Dim d As Range
+    Dim CopyRange As Range
+    Dim PasteRange As Range
+    Dim RosterTable As ListObject
+    
+    Set RosterTable = RosterSheet.ListObjects(1)
+    Set RosterNameRange = RosterTable.ListColumns("First").DataBodyRange
+    Set RecordsNameRange = FindRecordsName(RecordsSheet)
+    
+    'Find the bottom of the name list
+    Set c = RecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    Set PasteRange = c.Offset(1, 0)
+    
+    'If there are no names, simply copy everything
+    If c.Value = "H BREAK" Then
+        Set d = RosterNameRange
+    Else
+        'Find all non-duplicative students and copy over
+        Set d = FindUnique(RosterNameRange, RecordsNameRange)
+    End If
+
+    If Not d Is Nothing Then
+        Set CopyRange = Union(d, d.Offset(0, 1)) 'first and last names
+        Set CopyToRecords = CopyRows(RosterSheet, CopyRange, RecordsSheet, PasteRange)
+    End If
+    
+    'Delete blanks and duplicates
+    Set RecordsNameRange = FindRecordsName(RecordsSheet)
+    Set FullNameRange = RecordsNameRange.Resize(RecordsNameRange.Rows.Count, 2) 'Both columns
+    
+    Call RemoveDupeBlank(RecordsSheet, FullNameRange, RecordsNameRange)
+       
 Footer:
 
 End Function

@@ -1,27 +1,6 @@
 Attribute VB_Name = "ReportSubs"
 Option Explicit
 
-Sub ReportClearTotals()
-'Only clears the totals. Called when clearing the roster and clearing the entire report
-
-    Dim ReportSheet As Worksheet
-    Dim DelRange As Range
-    Dim HeaderRefRange As Range
-    Dim LastString As String
-    
-    Set ReportSheet = Worksheets("Report Page")
-    Set HeaderRefRange = Range("ReportColumnNamesList")
-    
-    'We go from "Total" to the end of the table, definted by the last cell in the list
-    LastString = HeaderRefRange.Rows(HeaderRefRange.Rows.Count).Value
-    
-    Set DelRange = FindTableHeader(ReportSheet, "Total", LastString)
-    
-    'Delete the row beneath the header
-    DelRange.Offset(1, 0).ClearContents
-
-End Sub
-
 Sub ReportClearAll()
 'Removes everything, including the totals
 
@@ -62,5 +41,26 @@ Footer:
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
+
+End Sub
+
+Sub ReportClearTotals()
+'Only clears the totals. Called when clearing the roster and clearing the entire report
+
+    Dim ReportSheet As Worksheet
+    Dim DelRange As Range
+    Dim HeaderRefRange As Range
+    Dim LastString As String
+    
+    Set ReportSheet = Worksheets("Report Page")
+    Set HeaderRefRange = Range("ReportColumnNamesList")
+    
+    'We go from "Total" to the end of the table, definted by the last cell in the list
+    LastString = HeaderRefRange.Rows(HeaderRefRange.Rows.Count).Value
+    
+    Set DelRange = FindTableHeader(ReportSheet, "Total", LastString)
+    
+    'Delete the row beneath the header
+    DelRange.Offset(1, 0).ClearContents
 
 End Sub

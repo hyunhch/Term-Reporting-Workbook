@@ -23,7 +23,7 @@ Private Sub ChooseProgramNoButton_Click()
     If Application.Workbooks.Count = 1 Then
         Application.Quit
     Else
-        ActiveWorkbook.Close SaveChanges:=False
+        ActiveWorkbook.Close savechanges:=False
     End If
 
 End Sub

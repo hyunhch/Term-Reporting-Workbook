@@ -15,28 +15,6 @@ Footer:
 
 End Function
 
-Sub MakeDropdown(TargetSheet As Worksheet, TargetRange As Range, TargetList As String)
-'General sub to make a dropdown list
-'Pass a named range with TargetList
-
-    Call UnprotectSheet(TargetSheet)
-
-    With CenterRange.Validation
-        .Delete
-        .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="=" & TargetList
-        .IgnoreBlank = True
-        .InCellDropdown = True
-        .InputTitle = ""
-        .ErrorTitle = "Error"
-        .InputMessage = ""
-        .ErrorMessage = "Please choose from the drop-down list"
-        .ShowInput = True
-        .ShowError = True
-    End With
-
-
-End Sub
-
 Sub CenterDropdown(TargetSheet As Worksheet, CenterRange As Range)
 'Make a dropdown list with center names in the indicated cell
 
@@ -136,6 +114,42 @@ Sub DateValidation(TargetSheet As Worksheet, DateRange As Range)
         .ShowError = True
     End With
 
+End Sub
+
+Function LettersOnly(str As String) As String
+    Dim i As Long, letters As String, letter As String
+
+    letters = vbNullString
+
+    For i = 1 To Len(str)
+        letter = VBA.Mid$(str, i, 1)
+
+        If Asc(LCase(letter)) >= 97 And Asc(LCase(letter)) <= 122 Then
+            letters = letters + letter
+        End If
+    Next
+    LettersOnly = letters
+End Function
+
+Sub MakeDropdown(TargetSheet As Worksheet, TargetRange As Range, TargetList As String)
+'General sub to make a dropdown list
+'Pass a named range with TargetList
+
+    Call UnprotectSheet(TargetSheet)
+
+    With CenterRange.Validation
+        .Delete
+        .Add Type:=xlValidateList, AlertStyle:=xlValidAlertStop, Formula1:="=" & TargetList
+        .IgnoreBlank = True
+        .InCellDropdown = True
+        .InputTitle = ""
+        .ErrorTitle = "Error"
+        .InputMessage = ""
+        .ErrorMessage = "Please choose from the drop-down list"
+        .ShowInput = True
+        .ShowError = True
+    End With
+    
 End Sub
 
 Sub ResetProtection()

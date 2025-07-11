@@ -22,7 +22,7 @@ Function ActivityAddStudents(ActivitySheet As Worksheet) As Range
     
     'Find checked students on the RosterTable
     Set c = RosterTable.ListColumns("Select").DataBodyRange.SpecialCells(xlCellTypeVisible)
-    Set RosterCheckRange = FindChecks(c.Offset(0, 1))
+    Set RosterCheckRange = FindChecks(c).Offset(0, 1)
     
     'If there are no students on the ActivitySheet, add all of them
     If Not ActivityTable.ListRows.Count > 0 Then
@@ -48,6 +48,71 @@ Function ActivityAddStudents(ActivitySheet As Worksheet) As Range
 Footer:
 
 End Function
+
+Sub ActivityDelete(Optional LabelCell As Range)
+'Deletes all attendance information and notes for the passed activity
+
+    Dim ActivitySheet As Worksheet
+    Dim ReportSheet As Worksheet
+    Dim RecordsSheet As Worksheet
+    Dim RecordsLabelRange As Range
+    Dim RecordsAttendanceRange As Range
+    Dim DelRange As Range
+    Dim c As Range
+    Dim i As Long
+    Dim LabelString As String
+    
+    Set ReportSheet = Worksheets("Report Page")
+    Set RecordsSheet = Worksheets("Records Page")
+    
+    'Check if there are students and activities. If there are no students, then clear everything
+    i = CheckRecords(RecordsSheet)
+    
+    If i > 2 Then 'The records sheet has been broken. Write code to remake the page
+        GoTo Footer
+    End If
+    
+    'Define range
+    Set RecordsLabelRange = FindRecordsLabel(RecordsSheet, LabelCell)
+        If RecordsLabelRange Is Nothing Then
+            GoTo Footer
+        End If
+        
+    Set DelRange = FindRecordsAttendance(RecordsSheet, , LabelCell) 'This will be a single column if a range was passed
+    
+    'Delete the attendance and the notes from the RecordsSheet
+    Call UnprotectSheet(RecordsSheet)
+    
+    DelRange.ClearContents
+    RecordsLabelRange.Offset(1, 0).ClearContents
+    
+    'Clear from the ReportSheet and close any open sheets
+    If LabelCell Is Nothing Then
+        Call ReportClearAll
+        
+        For Each ActivitySheet In ThisWorkbook.Sheets
+            If ActivitySheet.Range("A1").Value = "Practice" Then
+                ActivitySheet.Delete
+            End If
+        Next ActivitySheet
+        
+    Else
+        LabelString = LabelCell.Value
+        
+        For Each c In RecordsLabelRange
+            Call RemoveFromReport(c)
+            
+            Set ActivitySheet = FindActivitySheet(LabelString)
+            
+            If Not ActivitySheet Is Nothing Then
+                ActivitySheet.Delete
+            End If
+        Next c
+    End If
+    
+Footer:
+
+End Sub
 
 Function ActivityNewSheet(InfoArray() As Variant, Optional OperationString As String) As Worksheet
 'Called from the new activity form, returns a completed activity sheet
@@ -275,71 +340,6 @@ Sub ActivityPullAttendance(ActivitySheet As Worksheet, LabelCell As Range)
             End If
         End If
     Next c
-    
-Footer:
-
-End Sub
-
-Sub ActivityDelete(Optional LabelCell As Range)
-'Deletes all attendance information and notes for the passed activity
-
-    Dim ActivitySheet As Worksheet
-    Dim ReportSheet As Worksheet
-    Dim RecordsSheet As Worksheet
-    Dim RecordsLabelRange As Range
-    Dim RecordsAttendanceRange As Range
-    Dim DelRange As Range
-    Dim c As Range
-    Dim i As Long
-    Dim LabelString As String
-    
-    Set ReportSheet = Worksheets("Report Page")
-    Set RecordsSheet = Worksheets("Records Page")
-    
-    'Check if there are students and activities. If there are no students, then clear everything
-    i = CheckRecords(RecordsSheet)
-    
-    If i > 2 Then 'The records sheet has been broken. Write code to remake the page
-        GoTo Footer
-    End If
-    
-    'Define range
-    Set RecordsLabelRange = FindRecordsLabel(RecordsSheet, LabelCell)
-        If RecordsLabelRange Is Nothing Then
-            GoTo Footer
-        End If
-        
-    Set DelRange = FindRecordsAttendance(RecordsSheet, , LabelCell) 'This will be a single column if a range was passed
-    
-    'Delete the attendance and the notes from the RecordsSheet
-    Call UnprotectSheet(RecordsSheet)
-    
-    DelRange.ClearContents
-    RecordsLabelRange.Offset(1, 0).ClearContents
-    
-    'Clear from the ReportSheet and close any open sheets
-    If LabelCell Is Nothing Then
-        Call ReportClearAll
-        
-        For Each ActivitySheet In ThisWorkbook.Sheets
-            If ActivitySheet.Range("A1").Value = "Practice" Then
-                ActivitySheet.Delete
-            End If
-        Next ActivitySheet
-        
-    Else
-        LabelString = LabelCell.Value
-        
-        For Each c In RecordsLabelRange
-            Call RemoveFromReport(c)
-            
-            Set ActivitySheet = FindActivitySheet(LabelString)
-            
-            If Not ActivitySheet Is Nothing Then
-                ActivitySheet.Delete
-            End If
-        Next c
-    End If
     
 Footer:
 

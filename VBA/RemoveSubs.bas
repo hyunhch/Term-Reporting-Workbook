@@ -251,26 +251,25 @@ Function RemoveFromRoster(RosterSheet As Worksheet, RosterDelRange As Range, Ros
 'Returns 0 if there is nothing to remove, returns nothing on error
 
     Dim OldBook As Workbook
-    'Dim NewBook As Workbook
     Dim RecordsSheet As Worksheet
     Dim ActivitySheet As Worksheet
     Dim RosterNameRange As Range
+    Dim RosterTableRange As Range
+    Dim RosterFullRange As Range
     Dim RecordsNameRange As Range
     Dim RecordsDelRange As Range
     Dim c As Range
     Dim i As Long
     Dim j As Long
     Dim DelConfirm As Long
-    'Dim ExportConfirm As Long
-    'Dim SheetArray() As Variant
     
     Set OldBook = ThisWorkbook
     Set RecordsSheet = Worksheets("Records Page")
     Set RosterNameRange = RosterTable.ListColumns("First").DataBodyRange
     
     'Check the RecordsSheet. If there are no students, break
-    i = CheckRecords(RecordsSheet) > 2
-        If i Then
+    i = CheckRecords(RecordsSheet)
+        If i > 2 Then
             RemoveFromRoster = 0
                 
             GoTo SkipRecords
@@ -303,26 +302,7 @@ Function RemoveFromRoster(RosterSheet As Worksheet, RosterDelRange As Range, Ros
     
         GoTo Footer
     End If
-        
-    'Promp for exporting
-    'ExportConfirm = MsgBox("Do you want to save a copy of these students' attendance before removing them?", vbQuestion + vbYesNo + vbDefaultButton2)
-        
-        'If ExportConfirm <> vbYes Then
-            'GoTo SkipExport
-        'End If
-    
-    'ReDim SheetArray(1 To 4)
-        'SheetArray(1) = "Cover"
-        'SheetArray(2) = "Roster"
-        'SheetArray(3) = "Simple"
-        'SheetArray(4) = "Detailed"
-    
-    'Set NewBook = ExportMakeBook(RecordsDelRange, SheetArray) 'Figure out error handling here
-    
-    'Call ExportLocalSave(OldBook, NewBook)
-    'OldBook.Activate
-    
-SkipExport:
+
     'Remove students from any open activity sheet
     For Each ActivitySheet In OldBook.Sheets
         Set c = ActivitySheet.Range("A1")
@@ -337,9 +317,14 @@ SkipExport:
     Call RemoveFromRecords(RecordsSheet, RecordsDelRange, "Yes") 'Will prompt for export
     
 SkipRecords:
+    'If extra columns of data were added but not a header, it can break things
+    Set c = RosterSheet.Cells.Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious) 'Find the last used column
+    Set RosterTableRange = RosterTable.Range
+    Set RosterFullRange = RosterSheet.Range(RosterTableRange, c)
+    
     'Delete from Roster
     Call UnprotectSheet(RosterSheet)
-    Call RemoveRows(RosterSheet, RosterTable.DataBodyRange, RosterNameRange, RosterDelRange)
+    Call RemoveRows(RosterSheet, RosterFullRange, RosterNameRange, RosterDelRange)
     
     'Parse the roster again and tabulate
     Call RosterParseButton

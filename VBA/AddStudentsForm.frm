@@ -112,8 +112,11 @@ SkipNewSheet:
     'Make a table
     Call CreateTable(ActivitySheet)
     
+    'Popup with the number of students added and activate the sheet
     i = AddStudentsRange.Cells.Count
     MsgBox (i & " students added.")
+    
+    ActivitySheet.Activate
    
 Footer:
     AddStudentsForm.Hide
@@ -162,6 +165,14 @@ Footer:
 
 End Sub
 
+Private Sub UserForm_Deactivate()
+
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
+End Sub
+
 Sub AddStudentsListBoxPopulate()
 'Populates the listbox with activities that haven't been completed
 
@@ -205,13 +216,5 @@ Sub AddStudentsListBoxPopulate()
     End With
 
 Footer:
-
-End Sub
-
-Private Sub UserForm_Deactivate()
-
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
 
 End Sub

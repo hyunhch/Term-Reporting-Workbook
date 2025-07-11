@@ -15,7 +15,6 @@ Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 Option Explicit
 
-
 Private Sub LoadActivityCancelButton_Click()
 'Hide the form
 
@@ -207,6 +206,14 @@ Footer:
 
 End Sub
 
+Private Sub UserForm_Deactivate()
+
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
+End Sub
+
 Sub LoadActivityListBoxPopulate()
 'Populates the listbox with activities that haven't been completed
 
@@ -250,13 +257,5 @@ Sub LoadActivityListBoxPopulate()
     End With
 
 Footer:
-
-End Sub
-
-Private Sub UserForm_Deactivate()
-
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
 
 End Sub

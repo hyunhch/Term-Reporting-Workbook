@@ -37,51 +37,6 @@ Footer:
 
 End Sub
 
-Sub ActivitySaveButton()
-'To call the SaveActivity() sub
-
-    Dim ActivitySheet As Worksheet
-    Dim RecordsSheet As Worksheet
-    Dim LabelCell As Range
-    Dim ActivityTable As ListObject
-
-    Application.EnableEvents = False
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
-
-    Set ActivitySheet = ActiveSheet
-    Set RecordsSheet = Worksheets("Records Page")
-
-    'Look at the ActivityTable. Clear if there's no table or no rows
-    If CheckTable(ActivitySheet) > 2 Then
-        Call ActivityDelete(LabelCell)
-        
-        GoTo Footer
-    End If
-
-    'Check that the label is present. It always should be
-    Set LabelCell = ActivitySheet.Range("1:1").Find("Practice", , xlValues, xlWhole).Offset(0, 1)
-    If LabelCell Is Nothing Or Len(LabelCell.Value) < 1 Then
-        MsgBox ("Something has gone wrong. Please close this activity and either load or recreate it.")
-        GoTo Footer
-    End If
-
-    'Check that there are students on the Records Page. It's okay if there are no activities
-    If CheckRecords(RecordsSheet) > 2 Then
-        MsgBox ("Please parse the roster and try again.")
-        GoTo Footer
-    End If
-
-    'Pass to save and close the sheet
-    Call ActivitySave(ActivitySheet, LabelCell)
-
-Footer:
-    Application.EnableEvents = True
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-
-End Sub
-
 Sub ActivityCloseButton()
 'Deletes the sheet
 'Prompts for saving if what's on the ActivitySheet doesn't match the RecordsSheet
@@ -195,4 +150,49 @@ Footer:
     Application.EnableEvents = True
     Application.ScreenUpdating = True
     Application.DisplayAlerts = True
+End Sub
+
+Sub ActivitySaveButton()
+'To call the SaveActivity() sub
+
+    Dim ActivitySheet As Worksheet
+    Dim RecordsSheet As Worksheet
+    Dim LabelCell As Range
+    Dim ActivityTable As ListObject
+
+    Application.EnableEvents = False
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+
+    Set ActivitySheet = ActiveSheet
+    Set RecordsSheet = Worksheets("Records Page")
+
+    'Look at the ActivityTable. Clear if there's no table or no rows
+    If CheckTable(ActivitySheet) > 2 Then
+        Call ActivityDelete(LabelCell)
+        
+        GoTo Footer
+    End If
+
+    'Check that the label is present. It always should be
+    Set LabelCell = ActivitySheet.Range("1:1").Find("Practice", , xlValues, xlWhole).Offset(0, 1)
+    If LabelCell Is Nothing Or Len(LabelCell.Value) < 1 Then
+        MsgBox ("Something has gone wrong. Please close this activity and either load or recreate it.")
+        GoTo Footer
+    End If
+
+    'Check that there are students on the Records Page. It's okay if there are no activities
+    If CheckRecords(RecordsSheet) > 2 Then
+        MsgBox ("Please parse the roster and try again.")
+        GoTo Footer
+    End If
+
+    'Pass to save and close the sheet
+    Call ActivitySave(ActivitySheet, LabelCell)
+
+Footer:
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
 End Sub

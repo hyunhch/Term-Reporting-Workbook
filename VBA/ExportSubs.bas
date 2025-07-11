@@ -218,91 +218,155 @@ Footer:
 
 End Function
 
-Function ExportSimpleAttendance(OldBook As Workbook, NewBook As Workbook, Optional ExportRange As Range) As Long
-'Exports if a student was present, absent, or unrecorded for every activity
-    '1 - present
-    '0 - absent
-    '[nothing] - N/A
-'Passing a range only exports for those students. Range should be from the RecordsSheet
-'Returns 1 if successful, 0 otherwise
+Function ExportLocalSave(OldBook As Workbook, NewBook As Workbook) As Long
+'For making a local save
 
-    Dim OldRecordsSheet As Worksheet
-    Dim NewSheet As Worksheet
-    Dim CopyRange As Range
-    Dim PasteRange As Range
-    Dim OldRecordsHeaderRange As Range
-    Dim OldRecordsFoundNames As Range
-    Dim c As Range
-    Dim d As Range
-    Dim LRow As Long
-    Dim LCol As Long
-    
-    ExportSimpleAttendance = 0
-    
-    Set OldRecordsSheet = OldBook.Worksheets("Records Page")
-    
-    'Make a new sheet
-    With NewBook
-        Set NewSheet = .Sheets.Add(After:=.Sheets(.Sheets.Count))
-        NewSheet.Name = "Simple Attendance"
-    End With
+    Dim CoverSheet As Worksheet
+    Dim CenterString As String
+    Dim FileName As String
+    Dim LocalPath As String
+    Dim SaveName As String
+    Dim SubDate As String
+    Dim SubTime As String
 
-    'If there is no passed range, we can copy and paste the entire page
-    If ExportRange Is Nothing Then
-        LRow = OldRecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
-        LCol = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
-        
-        Set c = OldRecordsSheet.Cells(LRow, LCol)
-        Set CopyRange = OldRecordsSheet.Range("A1", c)
-        
-        Set c = NewSheet.Range("A1")
-        Set PasteRange = c.Resize(CopyRange.Rows.Count, CopyRange.Columns.Count)
+    ExportLocalSave = 0
+
+    Set CoverSheet = Worksheets("Cover Page")
+
+    'Pull in center from the CoverSheet, date, and time
+    CenterString = CoverSheet.Range("A:A").Find("Center", , xlValues, xlWhole).Offset(0, 1).Value
+    SubDate = Format(Date, "yyyy-mm-dd")
+    SubTime = Format(Time, "hh-nn AM/PM")
+
+    'Make a file name using the center, date, and time of submission
+    FileName = CenterString & " " & SubDate & "." & SubTime & ".xlsm"
     
-        PasteRange.Value = CopyRange.Value
-    Else
-        'Grab all of the activities and the headers
-        Set c = OldRecordsSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
-        Set d = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
-        Set OldRecordsHeaderRange = OldRecordsSheet.Range("A1", Cells(c.Row, d.Column).Address)
-        
-        'Make sure we're on the RecordsSheet. If not, search there for the names to be exported
-        If Not ExportRange.Worksheet.Name = "Records Page" Then
-            Set c = FindRecordsName(OldRecordsSheet)
-                If c Is Nothing Then
-                    GoTo Footer
-                End If
-            
-            Set OldRecordsFoundNames = FindName(ExportRange, c)
-                If OldRecordsFoundNames Is Nothing Then
-                    GoTo Footer
-                End If
-        Else
-            Set OldRecordsFoundNames = ExportRange
+    'Where the OldBook is stored
+    OldBook.Activate
+    LocalPath = GetLocalPath(ThisWorkbook.path)
+
+    'For Win and Mac
+    If Application.OperatingSystem Like "*Mac*" Then
+        SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
+        If SaveName = "False" Then
+            NewBook.Close savechanges:=False
+            GoTo Footer
         End If
-        
-        'Define the range to copy over
-        Set c = Intersect(OldRecordsFoundNames.EntireRow, OldRecordsHeaderRange.EntireColumn)
-        Set CopyRange = Union(OldRecordsHeaderRange, c)
-        Set PasteRange = NewSheet.Range("A1")
-        
-        Call CopyRows(OldRecordsSheet, CopyRange, NewSheet, PasteRange)
+        NewBook.SaveAs FileName:=LocalPath & "/" & FileName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+        'ActiveWorkbook.Close SaveChanges:=False
+    Else
+        SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
+        If SaveName = "False" Then
+            NewBook.Close savechanges:=False
+            GoTo Footer
+        End If
+        NewBook.SaveAs FileName:=SaveName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
+        'ActiveWorkbook.Close SaveChanges:=False
     End If
     
-    'Format the headers bold
-    Set c = NewSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
-    
-    NewSheet.Range("A1", c).EntireRow.Font.Bold = True
-    
-    'Delete the padding cells
-    c.EntireRow.Delete
-    
-    Set c = NewSheet.Range("1:1").Find("V BREAK", , xlValues, xlWhole)
-    c.EntireColumn.Delete
-    
-    ExportSimpleAttendance = 1
-    
+    'Everything worked
+    ExportLocalSave = 1
+
 Footer:
+
+End Function
+
+Function ExportMakeBook(Optional ExportRange As Range, Optional SheetArray As Variant) As Workbook
+'Container function for each section of exporting
+'By default, only exports the cover page
+'Every sheet passed gets included in the returned book
+
+    Dim NewBook As Workbook
+    Dim OldBook As Workbook
+    Dim NewSheet As Worksheet
+    Dim OldNarrativeSheet As Worksheet
+    Dim OldDirectorySheet As Worksheet
+    Dim OldOtherSheet As Worksheet
+    Dim i As Long
+    Dim SheetValue As Long
+    Dim SheetName As String
+    Dim ReadyArray() As Variant
     
+    Set OldBook = ThisWorkbook
+    Set OldNarrativeSheet = Worksheets("Narrative Page")
+    Set OldDirectorySheet = Worksheets("Directory Page")
+    Set OldOtherSheet = Worksheets("Other Page")
+    
+    'Determine which sheets have been filled out
+    ReadyArray = GetReadyToExport
+    
+    For i = 1 To UBound(ReadyArray)
+        SheetName = ReadyArray(i, 1)
+        SheetValue = ReadyArray(i, 2)
+ 
+        'Break if we're missing needed information
+        If SheetName = "Cover Page" And SheetValue <> 1 Then
+            MsgBox ("Please enter your name, date, and center on the Cover Page")
+            GoTo Footer
+        ElseIf SheetName = "Roster Page" And SheetValue > 2 Then 'This shouldn't happen
+            MsgBox ("You have no students on your roster.")
+            GoTo Footer
+        ElseIf SheetName = "Roster Page" And SheetValue > 2 Then
+            MsgBox ("You have no saved attendance information. Please parse your roster.") 'This shouldn't happen
+            GoTo Footer
+        ElseIf SheetName = "Report Page" And SheetValue > 2 Then 'We only need the report in some cases
+            MsgBox ("You have no activities on the Report Page.")
+            GoTo Footer
+        End If
+    Next i
+    
+    'Create new book and add sheets
+    Set NewBook = Workbooks.Add
+
+    'CoverSheet will always be added
+    If ExportCoverSheet(OldBook, NewBook) <> 1 Then
+        GoTo ErrorMessage
+    End If
+    
+    'If no array was passed, we're done
+    If IsArray(SheetArray) = False Then
+        GoTo ReturnBook
+    End If
+    
+    'Loop through
+    For i = LBound(SheetArray) To UBound(SheetArray)
+        SheetName = SheetArray(i)
+    
+        Select Case SheetName
+            Case "Roster"
+                Call ExportRosterSheet(OldBook, NewBook, ExportRange)
+            Case "Simple"
+                Call ExportSimpleAttendance(OldBook, NewBook, ExportRange)
+            Case "Detailed"
+                Call ExportDetailedAttendance(OldBook, NewBook, ExportRange)
+            Case "Report"
+                Call ExportReportSheet(OldBook, NewBook)
+            Case "Narrative"
+                Call ExportGenericSheet(OldBook, NewBook, OldNarrativeSheet)
+            Case "Directory"
+                Call ExportGenericSheet(OldBook, NewBook, OldDirectorySheet)
+            Case "Other"
+                Call ExportGenericSheet(OldBook, NewBook, OldOtherSheet)
+        End Select
+    Next i
+
+ReturnBook:
+    'Delete "Sheet1"
+    Set NewSheet = NewBook.Worksheets("Sheet1")
+    NewSheet.Delete
+
+    Set ExportMakeBook = NewBook
+    
+    GoTo Footer
+
+ErrorMessage:
+    MsgBox ("Something has gone wrong, please close and reopen this file, then try again." & vbCr _
+        & "If the problem persists, please contact the state office.")
+            
+    NewBook.Close savechanges:=False
+
+Footer:
+
 End Function
 
 Function ExportReportSheet(OldBook As Workbook, NewBook As Workbook) As Long
@@ -411,157 +475,6 @@ Footer:
 
 End Function
 
-Function ExportMakeBook(Optional ExportRange As Range, Optional SheetArray As Variant) As Workbook
-'Container function for each section of exporting
-'By default, only exports the cover page
-'Every sheet passed gets included in the returned book
-
-    Dim NewBook As Workbook
-    Dim OldBook As Workbook
-    Dim NewSheet As Worksheet
-    Dim OldNarrativeSheet As Worksheet
-    Dim OldDirectorySheet As Worksheet
-    Dim OldOtherSheet As Worksheet
-    Dim i As Long
-    Dim SheetValue As Long
-    Dim SheetName As String
-    Dim ReadyArray() As Variant
-    
-    Set OldBook = ThisWorkbook
-    Set OldNarrativeSheet = Worksheets("Narrative Page")
-    Set OldDirectorySheet = Worksheets("Directory Page")
-    Set OldOtherSheet = Worksheets("Other Page")
-    
-    'Determine which sheets have been filled out
-    ReadyArray = GetReadyToExport
-    
-    For i = 1 To UBound(ReadyArray)
-        SheetName = ReadyArray(i, 1)
-        SheetValue = ReadyArray(i, 2)
- 
-        'Break if we're missing needed information
-        If SheetName = "Cover Page" And SheetValue <> 1 Then
-            MsgBox ("Please enter your name, date, and center on the Cover Page")
-            GoTo Footer
-        ElseIf SheetName = "Roster Page" And SheetValue > 2 Then 'This shouldn't happen
-            MsgBox ("You have no students on your roster.")
-            GoTo Footer
-        ElseIf SheetName = "Roster Page" And SheetValue > 2 Then
-            MsgBox ("You have no saved attendance information. Please parse your roster.") 'This shouldn't happen
-            GoTo Footer
-        ElseIf SheetName = "Report Page" And SheetValue <> 1 Then 'We only need the report on some cases
-            MsgBox ("You have no activities on the Report Page.")
-            GoTo Footer
-        End If
-    Next i
-    
-    'Create new book and add sheets
-    Set NewBook = Workbooks.Add
-
-    'CoverSheet will always be added
-    If ExportCoverSheet(OldBook, NewBook) <> 1 Then
-        GoTo ErrorMessage
-    End If
-    
-    'If no array was passed, we're done
-    If IsArray(SheetArray) = False Then
-        GoTo ReturnBook
-    End If
-    
-    'Loop through
-    For i = LBound(SheetArray) To UBound(SheetArray)
-        SheetName = SheetArray(i)
-    
-        Select Case SheetName
-            Case "Roster"
-                Call ExportRosterSheet(OldBook, NewBook, ExportRange)
-            Case "Simple"
-                Call ExportSimpleAttendance(OldBook, NewBook, ExportRange)
-            Case "Detailed"
-                Call ExportDetailedAttendance(OldBook, NewBook, ExportRange)
-            Case "Report"
-                Call ExportReportSheet(OldBook, NewBook)
-            Case "Narrative"
-                Call ExportGenericSheet(OldBook, NewBook, OldNarrativeSheet)
-            Case "Directory"
-                Call ExportGenericSheet(OldBook, NewBook, OldDirectorySheet)
-            Case "Other"
-                Call ExportGenericSheet(OldBook, NewBook, OldOtherSheet)
-        End Select
-    Next i
-
-ReturnBook:
-    'Delete "Sheet1"
-    Set NewSheet = NewBook.Worksheets("Sheet1")
-    NewSheet.Delete
-
-    Set ExportMakeBook = NewBook
-    
-    GoTo Footer
-
-ErrorMessage:
-    MsgBox ("Something has gone wrong, please close and reopen this file, then try again." & vbCr _
-        & "If the problem persists, please contact the state office.")
-            
-    NewBook.Close SaveChanges:=False
-
-Footer:
-
-End Function
-
-Function ExportLocalSave(OldBook As Workbook, NewBook As Workbook) As Long
-'For making a local save
-
-    Dim CoverSheet As Worksheet
-    Dim CenterString As String
-    Dim FileName As String
-    Dim LocalPath As String
-    Dim SaveName As String
-    Dim SubDate As String
-    Dim SubTime As String
-
-    ExportLocalSave = 0
-
-    Set CoverSheet = Worksheets("Cover Page")
-
-    'Pull in center from the CoverSheet, date, and time
-    CenterString = CoverSheet.Range("A:A").Find("Center", , xlValues, xlWhole).Offset(0, 1).Value
-    SubDate = Format(Date, "yyyy-mm-dd")
-    SubTime = Format(Time, "hh-nn AM/PM")
-
-    'Make a file name using the center, date, and time of submission
-    FileName = CenterString & " " & SubDate & "." & SubTime & ".xlsm"
-    
-    'Where the OldBook is stored
-    OldBook.Activate
-    LocalPath = GetLocalPath(ThisWorkbook.path)
-
-    'For Win and Mac
-    If Application.OperatingSystem Like "*Mac*" Then
-        SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
-        If SaveName = "False" Then
-            NewBook.Close SaveChanges:=False
-            GoTo Footer
-        End If
-        NewBook.SaveAs FileName:=LocalPath & "/" & FileName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
-        'ActiveWorkbook.Close SaveChanges:=False
-    Else
-        SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
-        If SaveName = "False" Then
-            NewBook.Close SaveChanges:=False
-            GoTo Footer
-        End If
-        NewBook.SaveAs FileName:=SaveName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
-        'ActiveWorkbook.Close SaveChanges:=False
-    End If
-    
-    'Everything worked
-    ExportLocalSave = 1
-
-Footer:
-
-End Function
-
 Function ExportSharePoint(OldBook As Workbook, NewBook As Workbook) As Long
 'Sends the cover sheet and report to SharePoint
 
@@ -591,7 +504,7 @@ Function ExportSharePoint(OldBook As Workbook, NewBook As Workbook) As Long
 
     'Upload
     NewBook.SaveAs FileName:=SpPath & "/" & FileName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
-    NewBook.Close SaveChanges:=False
+    NewBook.Close savechanges:=False
     
     'Everything worked
     ExportSharePoint = 1
@@ -599,6 +512,96 @@ Function ExportSharePoint(OldBook As Workbook, NewBook As Workbook) As Long
 Footer:
 
 End Function
+
+Function ExportSimpleAttendance(OldBook As Workbook, NewBook As Workbook, Optional ExportRange As Range) As Long
+'Exports if a student was present, absent, or unrecorded for every activity
+    '1 - present
+    '0 - absent
+    '[nothing] - N/A
+'Passing a range only exports for those students. Range should be from the RecordsSheet
+'Returns 1 if successful, 0 otherwise
+
+    Dim OldRecordsSheet As Worksheet
+    Dim NewSheet As Worksheet
+    Dim CopyRange As Range
+    Dim PasteRange As Range
+    Dim OldRecordsHeaderRange As Range
+    Dim OldRecordsFoundNames As Range
+    Dim c As Range
+    Dim d As Range
+    Dim LRow As Long
+    Dim LCol As Long
+    
+    ExportSimpleAttendance = 0
+    
+    Set OldRecordsSheet = OldBook.Worksheets("Records Page")
+    
+    'Make a new sheet
+    With NewBook
+        Set NewSheet = .Sheets.Add(After:=.Sheets(.Sheets.Count))
+        NewSheet.Name = "Simple Attendance"
+    End With
+
+    'If there is no passed range, we can copy and paste the entire page
+    If ExportRange Is Nothing Then
+        LRow = OldRecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
+        LCol = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
+        
+        Set c = OldRecordsSheet.Cells(LRow, LCol)
+        Set CopyRange = OldRecordsSheet.Range("A1", c)
+        
+        Set c = NewSheet.Range("A1")
+        Set PasteRange = c.Resize(CopyRange.Rows.Count, CopyRange.Columns.Count)
+    
+        PasteRange.Value = CopyRange.Value
+    Else
+        'Grab all of the activities and the headers
+        Set c = OldRecordsSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
+        Set d = OldRecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+        Set OldRecordsHeaderRange = OldRecordsSheet.Range("A1", Cells(c.Row, d.Column).Address)
+        
+        'Make sure we're on the RecordsSheet. If not, search there for the names to be exported
+        If Not ExportRange.Worksheet.Name = "Records Page" Then
+            Set c = FindRecordsName(OldRecordsSheet)
+                If c Is Nothing Then
+                    GoTo Footer
+                End If
+            
+            Set OldRecordsFoundNames = FindName(ExportRange, c)
+                If OldRecordsFoundNames Is Nothing Then
+                    GoTo Footer
+                End If
+        Else
+            Set OldRecordsFoundNames = ExportRange
+        End If
+        
+        'Define the range to copy over
+        Set c = Intersect(OldRecordsFoundNames.EntireRow, OldRecordsHeaderRange.EntireColumn)
+        Set CopyRange = Union(OldRecordsHeaderRange, c)
+        Set PasteRange = NewSheet.Range("A1")
+        
+        Call CopyRows(OldRecordsSheet, CopyRange, NewSheet, PasteRange)
+    End If
+    
+    'Format the headers bold
+    Set c = NewSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
+    
+    NewSheet.Range("A1", c).EntireRow.Font.Bold = True
+    
+    'Delete the padding cells
+    c.EntireRow.Delete
+    
+    Set c = NewSheet.Range("1:1").Find("V BREAK", , xlValues, xlWhole)
+    c.EntireColumn.Delete
+    
+    ExportSimpleAttendance = 1
+    
+Footer:
+    
+End Function
+
+
+'****Not finished****
 
 Function ExportToRA() As Long
 

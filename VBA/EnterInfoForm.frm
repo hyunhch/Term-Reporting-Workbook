@@ -19,7 +19,7 @@ Option Explicit
 Private Sub EnterInfoNoButton_Click()
 
     EnterInfoForm.Hide
-    ActiveWorkbook.Close SaveChanges:=False
+    ActiveWorkbook.Close savechanges:=False
     
 End Sub
 

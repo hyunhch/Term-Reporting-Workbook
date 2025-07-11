@@ -3,7 +3,7 @@ Option Explicit
 
 Sub Tester()
 
-Call ChooseProgram("University Ref")
+'Call ChooseProgram("University Ref")
 'Call ChooseProgram("College Ref")
 'Call ChooseProgram("Transfer Ref")
 
@@ -19,8 +19,9 @@ Sub TesterClearTables()
     Dim DirectorySheet As Worksheet
     Dim NarrativeSheet As Worksheet
     Dim OtherSheet As Worksheet
+    Dim NewButtonRange As Range
     Dim ClearTable As ListObject
-    Dim btn As Button
+    Dim NewButton As Button
     
     Set CoverSheet = Worksheets("Cover Page")
     Set RecordsSheet = Worksheets("Records Page")
@@ -80,13 +81,13 @@ Sub TesterClearTables()
         .Columns.UseStandardWidth = True
     End With
     
-    'Call UnprotectSheet(OtherSheet)
-    'With OtherSheet
-        '.Cells.ClearContents
-        '.Cells.ClearFormats
+    Call UnprotectSheet(OtherSheet)
+    With OtherSheet
+        .Cells.ClearContents
+        .Cells.ClearFormats
         '.Buttons.Delete
-        '.Columns.UseStandardWidth = True
-    'End With
+        .Columns.UseStandardWidth = True
+    End With
     
     If Not Worksheets(1).Name = "University Ref" Then
         Worksheets(1).Name = "University Ref"
@@ -121,6 +122,18 @@ Sub TesterClearTables()
             ClearTable.Unlist
         End If
     Next ClearTable
+    
+    'Put the Choose Program button back on the Cover Sheet
+    Set NewButtonRange = CoverSheet.Range("B2:D4")
+    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
+        NewButtonRange.Width, NewButtonRange.Height)
+    
+    With NewButton
+        .OnAction = "CoverChooseProgramButton"
+        .Caption = "Select Program"
+        .Name = "CoverSelectProgramButton"
+    End With
+    
 
 End Sub
 
@@ -232,7 +245,11 @@ Sub ChooseProgram(ProgramString As String)
     'Populate the DirectorySheet, NarrativeSheet, and OtherSheet
     Call DirectorySheetTables(ProgramString)
     Call NarrativeSheetTables(ProgramString)
-    
+    Call OtherSheetTables 'No difference between programs
+
+    'Break external links
+    Call BreakExternalLinks
+
     'Make sure the workbook can be edited
     Call ResetProtection
     
@@ -241,6 +258,59 @@ Footer:
     Application.DisplayAlerts = True
     Application.EnableEvents = True
 
+End Sub
+
+Sub CoverSheetButtons(ProgramString)
+'Called when the program is chosen
+
+    Dim CoverSheet As Worksheet
+    Dim NewButton As Button
+    Dim NewButtonRange As Range
+      
+    Set CoverSheet = Worksheets("Cover Page")
+    
+    'Deleting Select Program button
+    CoverSheet.Buttons.Delete
+  
+    'Submit button
+    Set NewButtonRange = CoverSheet.Range("D1:F2")
+    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
+        NewButtonRange.Width, NewButtonRange.Height)
+    
+    With NewButton
+        .OnAction = "CoverSharePointButton"
+        .Caption = "Submit to SharePoint"
+        .Name = "CoverSharePointExportButton"
+    End With
+        
+    'Save button
+    Set NewButtonRange = CoverSheet.Range("D4:F5")
+    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
+        NewButtonRange.Width, NewButtonRange.Height)
+    
+    With NewButton
+        .OnAction = "CoverLocalSaveButton"
+        .Caption = "Save a Copy"
+        .Name = "CoverSaveCopyButton"
+    End With
+        
+    'Import Button
+    Set NewButtonRange = CoverSheet.Range("A8:B9")
+    
+    'Nudge for extra columns
+    'If ProgramString <> "College Ref" Then
+        'Set NewButtonRange = NewButtonRange.Offset(0, 2)
+    'End If
+    
+    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
+        NewButtonRange.Width, NewButtonRange.Height)
+    
+    With NewButton
+        .OnAction = "CoverImportButton"
+        .Caption = "Import Records"
+        .Name = "CoverImportButton"
+    End With
+        
 End Sub
 
 Sub CoverSheetText(RefSheet As Worksheet, CoverSheet As Worksheet, ProgramString As String)
@@ -360,56 +430,6 @@ Sub CoverSheetText(RefSheet As Worksheet, CoverSheet As Worksheet, ProgramString
     
     PasteRange.Columns.AutoFit
     
-End Sub
-
-Sub CoverSheetButtons(ProgramString)
-'Called when the program is chosen
-
-    Dim CoverSheet As Worksheet
-    Dim NewButton As Button
-    Dim NewButtonRange As Range
-      
-    Set CoverSheet = Worksheets("Cover Page")
-  
-    'Submit button
-    Set NewButtonRange = CoverSheet.Range("D1:F2")
-    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
-        NewButtonRange.Width, NewButtonRange.Height)
-    
-    With NewButton
-        .OnAction = "CoverSharePointButton"
-        .Caption = "Submit to SharePoint"
-        .Name = "CoverSharePointExportButton"
-    End With
-        
-    'Save button
-    Set NewButtonRange = CoverSheet.Range("D4:F5")
-    Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
-        NewButtonRange.Width, NewButtonRange.Height)
-    
-    With NewButton
-        .OnAction = "CoverLocalSaveButton"
-        .Caption = "Save a Copy"
-        .Name = "CoverSaveCopyButton"
-    End With
-        
-    'Import button
-    'Set NewButtonRange = CoverSheet.Range("L1:M2")
-    
-    'Nudge for extra columns
-    'If ProgramString <> "College Ref" Then
-        'Set NewButtonRange = NewButtonRange.Offset(0, 2)
-    'End If
-    
-    'Set NewButton = CoverSheet.Buttons.Add(NewButtonRange.Left, NewButtonRange.Top, _
-        NewButtonRange.Width, NewButtonRange.Height)
-    
-    'With NewButton
-        '.OnAction = "CoverImportButton"
-        '.Caption = "Import Records"
-        '.Name = "CoverImportButton"
-    'End With
-        
 End Sub
 
 Sub DirectorySheetTables(ProgramString As String)
@@ -587,6 +607,76 @@ NextElement:
 
 End Sub
 
+Sub OtherSheetTables()
+'Catch-all for anything that didn't belong in the Report or Narrative
+'Just the headers and blank rows
+
+    Dim OtherSheet As Worksheet
+    Dim RefSheet As Worksheet
+    Dim OtherHeaderRange As Range
+    Dim CopyRange As Range
+    Dim PasteRange As Range
+    Dim i As Long
+    Dim OtherTable As ListObject
+    
+    Set OtherSheet = Worksheets("Other Page")
+    Set RefSheet = Worksheets("Ref Tables")
+    
+    Set OtherHeaderRange = OtherSheet.Range("A1")
+    Set CopyRange = RefSheet.ListObjects("OtherSheetTable").HeaderRowRange
+    Set PasteRange = OtherHeaderRange.Resize(1, CopyRange.Columns.Count)
+        PasteRange.Value = CopyRange.Value
+        
+    Set OtherTable = CreateTable(OtherSheet, , PasteRange.Resize(21, PasteRange.Columns.Count))
+        OtherTable.ShowTableStyleRowStripes = True
+
+End Sub
+
+Sub RecordsSheetText()
+'Put in the corresponding activities for the program
+'Make this programatic in the future
+    
+    Dim RecordsSheet As Worksheet
+    Dim c As Range
+    Dim i As Long
+    Dim HeaderArray() As Variant
+    Dim ActivityArray() As Variant
+    
+    Set RecordsSheet = Worksheets("Records Page")
+    
+    'Headers for students and activities
+    ReDim HeaderArray(1 To 6, 1 To 2)
+        HeaderArray(1, 1) = "A3"
+        HeaderArray(2, 1) = "A4"
+        HeaderArray(3, 1) = "B3"
+        HeaderArray(4, 1) = "C1"
+        HeaderArray(5, 1) = "C2"
+        HeaderArray(6, 1) = "D1"
+        
+        HeaderArray(1, 2) = "First"
+        HeaderArray(2, 2) = "H BREAK"
+        HeaderArray(3, 2) = "Last"
+        HeaderArray(4, 2) = "Activity"
+        HeaderArray(5, 2) = "Notes"
+        HeaderArray(6, 2) = "V BREAK"
+    
+    For i = LBound(HeaderArray) To UBound(HeaderArray)
+        Set c = RecordsSheet.Range(HeaderArray(i, 1))
+        
+        c.Value = HeaderArray(i, 2)
+    Next i
+    
+    'Grab the list of activities and insert them one cell right of the "V BREAK" padding cell
+     ActivityArray = Application.Transpose(ActiveWorkbook.Names("ActivitiesList").RefersToRange.Value)
+     
+     Set c = RecordsSheet.Range("1:1").Find("V BREAK", , xlValues, xlWhole).Offset(0, 1)
+     
+     Call ResetTableHeaders(RecordsSheet, c, ActivityArray)
+    
+Footer:
+    
+End Sub
+
 Sub RosterSheetButtons()
 'Called when the program is chosen
 
@@ -741,47 +831,4 @@ Sub ReportSheetButtons()
 
 End Sub
 
-Sub RecordsSheetText()
-'Put in the corresponding activities for the program
-'Make this programatic in the future
-    
-    Dim RecordsSheet As Worksheet
-    Dim c As Range
-    Dim i As Long
-    Dim HeaderArray() As Variant
-    Dim ActivityArray() As Variant
-    
-    Set RecordsSheet = Worksheets("Records Page")
-    
-    'Headers for students and activities
-    ReDim HeaderArray(1 To 6, 1 To 2)
-        HeaderArray(1, 1) = "A3"
-        HeaderArray(2, 1) = "A4"
-        HeaderArray(3, 1) = "B3"
-        HeaderArray(4, 1) = "C1"
-        HeaderArray(5, 1) = "C2"
-        HeaderArray(6, 1) = "D1"
-        
-        HeaderArray(1, 2) = "First"
-        HeaderArray(2, 2) = "H BREAK"
-        HeaderArray(3, 2) = "Last"
-        HeaderArray(4, 2) = "Activity"
-        HeaderArray(5, 2) = "Notes"
-        HeaderArray(6, 2) = "V BREAK"
-    
-    For i = LBound(HeaderArray) To UBound(HeaderArray)
-        Set c = RecordsSheet.Range(HeaderArray(i, 1))
-        
-        c.Value = HeaderArray(i, 2)
-    Next i
-    
-    'Grab the list of activities and insert them one cell right of the "V BREAK" padding cell
-     ActivityArray = Application.Transpose(ActiveWorkbook.Names("ActivitiesList").RefersToRange.Value)
-     
-     Set c = RecordsSheet.Range("1:1").Find("V BREAK", , xlValues, xlWhole).Offset(0, 1)
-     
-     Call ResetTableHeaders(RecordsSheet, c, ActivityArray)
-    
-Footer:
-    
-End Sub
+

@@ -175,6 +175,10 @@ Sub TabulateActivityListBoxPopulate()
             If RecordsLabelRange(1, 1) = "V BREAK" Then
                 GoTo Footer
             End If
+            
+        'Get rid of any whitespace
+        RefLabelRange.Value = Application.Trim(RefLabelRange.Value)
+        RecordsLabelRange.Value = Application.Trim(RecordsLabelRange.Value)
         
         'Loop through to see which activies have saved attendance. Doing this here and not on ReportSheet because untabulated activities can be saved
         i = 0

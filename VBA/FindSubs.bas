@@ -82,6 +82,66 @@ Footer:
 End Function
 
 Function FindDuplicate(SourceRange As Range) As Range
+'Intermediate function that determines OS because MacOS doesn't support dictionaries
+'Returns the range of all duplicates in the range
+'Returns nothing if no duplicates are found
+
+    If Application.OperatingSystem Like "*Mac*" Then
+        Set FindDuplicate = FindDuplicateMac(SourceRange)
+    Else
+        Set FindDuplicate = FindDuplicateWin(SourceRange)
+    End If
+
+Footer:
+
+End Function
+
+Function FindDuplicateMac(SourceRange As Range) As Range
+'Returns the range of all duplicates in the range
+'Returns nothing if no duplicates are found
+
+    Dim DuplicateRange As Range
+    Dim CompareRange As Range
+    Dim LCell As Range
+    Dim c As Range
+    Dim d As Range
+    Dim i As Long
+    Dim j As Long
+    Dim SourceString As String
+    Dim CompareString As String
+
+    'Return nothing if it's a single cell
+    If Not SourceRange.Cells.Count > 1 Then
+        GoTo Footer
+    End If
+
+    Set LCell = SourceRange.Rows(SourceRange.Rows.Count)
+    
+    'Loop through and build range of duplicates
+    i = 1
+    For Each c In SourceRange.Resize(SourceRange.Cells.Count - 1, 1).Cells 'Stop at the 2nd to last cell
+        Set CompareRange = Range(c.Offset(1, 0), LCell)
+        SourceString = c.Value & " " & c.Offset(0, 1).Value
+        
+        For Each d In CompareRange
+            CompareString = d.Value & " " & d.Offset(0, 1).Value
+            
+            If SourceString = CompareString Then
+                Set DuplicateRange = BuildRange(d, DuplicateRange)
+            End If
+        Next d
+    Next c
+
+    'Return
+    If Not DuplicateRange Is Nothing Then
+        Set FindDuplicateMac = DuplicateRange
+    End If
+
+Footer:
+
+End Function
+
+Function FindDuplicateWin(SourceRange As Range) As Range
 'Returns the range of all duplicates in the range
 'Returns nothing if no duplicates are found
 
@@ -100,7 +160,7 @@ Function FindDuplicate(SourceRange As Range) As Range
             GoTo NextName
         End If
     
-        NameString = c.Value & " " & c.Offset(0, 1).Value
+        NameString = Trim(c.Value) & " " & Trim(c.Offset(0, 1).Value)
         If Not NameDict.Exists(NameString) Then
             NameDict.Add NameString, c
         Else
@@ -111,7 +171,7 @@ NextName:
 
     'Return
     If Not DuplicateRange Is Nothing Then
-        Set FindDuplicate = DuplicateRange
+        Set FindDuplicateWin = DuplicateRange
     End If
 
 Footer:
@@ -119,6 +179,55 @@ Footer:
 End Function
 
 Function FindName(SourceRange As Range, TargetRange As Range) As Range
+'Intermediate function that determines OS because MacOS doesn't support dictionaries
+'Returns a range of all matching names in the TargetRange
+'Returns nothing if no matches found
+
+    If Application.OperatingSystem Like "*Mac*" Then
+        Set FindName = FindNameMac(SourceRange, TargetRange)
+    Else
+        Set FindName = FindNameWin(SourceRange, TargetRange)
+    End If
+
+Footer:
+
+End Function
+
+Function FindNameMac(SourceRange As Range, TargetRange As Range) As Range
+'Returns a range of all matching names in the TargetRange
+'Returns nothing if no matches found
+'MacOS doesn't support dictionaries
+
+    Dim MatchRange As Range
+    Dim c As Range
+    Dim d As Range
+    Dim SourceName As String
+    Dim TargetName As String
+    
+    'Loop through the SourceRange, only looking for a single match
+    For Each c In SourceRange
+        SourceName = c.Value & " " & c.Offset(0, 1).Value
+        
+        For Each d In TargetRange
+            TargetName = d.Value & " " & d.Offset(0, 1).Value
+        
+            If SourceName = TargetName Then
+                Set MatchRange = BuildRange(d, MatchRange)
+                
+                GoTo NextName
+            End If
+        Next d
+NextName:
+    Next c
+
+    'Return
+    Set FindNameMac = MatchRange
+
+Footer:
+
+End Function
+
+Function FindNameWin(SourceRange As Range, TargetRange As Range) As Range
 'Returns a range of all matching names in the TargetRange
 'Returns nothing if no matches found
 
@@ -130,7 +239,7 @@ Function FindName(SourceRange As Range, TargetRange As Range) As Range
     Dim NameDict As Object
     
     Set NameDict = CreateObject("Scripting.Dictionary")
-    NameDict.CompareMode = vbTextCompare
+    NameDict.CompareMode = vbTextCompare 'Case insensitive
 
     'Loop through source range, read all unique names into dictionary
     For Each c In SourceRange
@@ -138,7 +247,7 @@ Function FindName(SourceRange As Range, TargetRange As Range) As Range
             GoTo NextName1
         End If
         
-        NameString = c.Value & " " & c.Offset(0, 1).Value
+        NameString = Trim(c.Value) & " " & Trim(c.Offset(0, 1).Value) 'Remove whitespace
         If Not NameDict.Exists(NameString) Then
             NameDict.Add NameString, c
         End If
@@ -151,7 +260,7 @@ NextName1:
             GoTo NextName2
         End If
     
-        NameString = d.Value & " " & d.Offset(0, 1).Value
+        NameString = Trim(d.Value) & " " & Trim(d.Offset(0, 1).Value)
         If NameDict.Exists(NameString) Then
             Set MatchCell = d
             Set MatchRange = BuildRange(MatchCell, MatchRange)
@@ -165,7 +274,7 @@ NextName2:
 
 ReturnRange:
     If Not MatchRange Is Nothing Then
-        Set FindName = MatchRange
+        Set FindNameWin = MatchRange
     End If
 Footer:
 
@@ -314,14 +423,18 @@ Function FindRecordsLabel(RecordsSheet As Worksheet, Optional LabelCell As Range
     Dim LabelRange As Range
     
     'Define the range of labels. Activity names are used as labels in term reports
+    'If the headers are missing, put them back in
     Set FCell = RecordsSheet.Range("1:1").Find("V BREAK", , xlValues, xlWhole)
-    Set LCell = RecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
-    
+        If FCell Is Nothing Then
+            Call RecordsSheetText
+        End If
+
     'If no activities. This should never happen for a term report
-    If LCell.Value = "V BREAK" Then
-        Set FindRecordsLabel = FCell
-        GoTo Footer
-    End If
+    Set LCell = RecordsSheet.Range("1:1").Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious)
+        If LCell.Value = "V BREAK" Then
+            Set FindRecordsLabel = FCell
+            GoTo Footer
+        End If
     
     Set LabelRange = RecordsSheet.Range(FCell.Offset(0, 1), LCell) 'One past the padding cell
     
@@ -344,7 +457,7 @@ Footer:
 
 End Function
 
-Function FindRecordsName(RecordsSheet As Worksheet, Optional NameCell As Range)
+Function FindRecordsName(RecordsSheet As Worksheet, Optional NameCell As Range) As Range
 'Returns the entire range of names if nothing passed
 'Returns the "H BREAK" padding cell if there are no names
 'Returns cell with the student's first name if NameCell is passed
@@ -355,15 +468,20 @@ Function FindRecordsName(RecordsSheet As Worksheet, Optional NameCell As Range)
     Dim MatchCell As Range
     Dim NameRange As Range
     
-    'Define the range of names
+    'If the headers are missing, put them back in
     Set FCell = RecordsSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
-    Set LCell = RecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+        If FCell Is Nothing Then
+            Call RecordsSheetText
+            
+            Set FCell = RecordsSheet.Range("A:A").Find("H BREAK", , xlValues, xlWhole)
+        End If
 
     'If there are no names
-    If LCell.Value = "H BREAK" Then
-        Set FindRecordsName = LCell
-        GoTo Footer
-    End If
+    Set LCell = RecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+        If LCell.Value = "H BREAK" Then
+            Set FindRecordsName = LCell
+            GoTo Footer
+        End If
     
     Set NameRange = RecordsSheet.Range(FCell.Offset(1, 0), LCell)
     
@@ -553,6 +671,56 @@ Footer:
 End Function
 
 Function FindUnique(SourceRange As Range, TargetRange As Range) As Range
+'Intermediate function that determines OS because MacOS doesn't support dictionaries
+'Returns a range of all non-matching names. Names in the source range but not the target range
+'Returns nothing if no matches found
+
+    If Application.OperatingSystem Like "*Mac*" Then
+        Set FindUnique = FindUniqueMac(SourceRange, TargetRange)
+    Else
+        Set FindUnique = FindUniqueWin(SourceRange, TargetRange)
+    End If
+
+Footer:
+
+End Function
+
+Function FindUniqueMac(SourceRange As Range, TargetRange As Range) As Range
+'Returns a range of all non-matching names. Names in the source range but not the target range
+'Returns nothing if no matches found
+'MacOS doesn't support dictionaries
+
+    Dim UniqueRange As Range
+    Dim c As Range
+    Dim d As Range
+    Dim SourceName As String
+    Dim TargetName As String
+    
+    'Loop through the SourceRange, only looking for a single match
+    For Each c In SourceRange
+        SourceName = c.Value & " " & c.Offset(0, 1).Value
+        
+        For Each d In TargetRange
+            TargetName = d.Value & " " & d.Offset(0, 1).Value
+        
+            If SourceName = TargetName Then
+                GoTo NextName
+            End If
+        Next d
+        
+        'Unique name
+        Set UniqueRange = BuildRange(c, UniqueRange)
+NextName:
+    Next c
+
+    'Return
+    Set FindUniqueMac = UniqueRange
+
+Footer:
+
+End Function
+
+Function FindUniqueWin(SourceRange As Range, TargetRange As Range) As Range
 'Returns a range of all non-matching names. Names in the source range but not the target range
 'Returns nothing if no matches found
 
@@ -593,8 +761,41 @@ NextSourceName:
     
     'Return
     If Not NoMatchRange Is Nothing Then
-        Set FindUnique = NoMatchRange
+        Set FindUniqueWin = NoMatchRange
     End If
+Footer:
+
+End Function
+
+Function FindUsedRange(TargetSheet As Worksheet) As Range
+'Returns the range between the first cell with text and last cell with text
+'Does not consider buttons, empty table rows, formatting, etc.
+'Returns nothing on error or if the sheet is blank
+
+    Dim c As Range
+    Dim d As Range
+    Dim FRow As Long
+    Dim FCol As Long
+    Dim LRow As Long
+    Dim LCol As Long
+    
+    'Make sure there's something on the sheet
+    If Not WorksheetFunction.CountA(TargetSheet.Cells) > 0 Then
+        GoTo Footer
+    End If
+    
+    'Find bounds
+    LRow = TargetSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious).Row
+    FRow = TargetSheet.Cells.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlNext).Row
+    LCol = TargetSheet.Cells.Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlPrevious).Column
+    FCol = TargetSheet.Cells.Find("*", SearchOrder:=xlByColumns, SearchDirection:=xlNext).Column
+    
+    'Return
+    Set c = TargetSheet.Cells(FRow, FCol)
+    Set d = TargetSheet.Cells(LRow, LCol)
+    
+    Set FindUsedRange = TargetSheet.Range(c, d)
+
 Footer:
 
 End Function

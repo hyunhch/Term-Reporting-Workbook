@@ -1,21 +1,12 @@
 ﻿Option Explicit
 
-Private Sub Workbook_Open()
+Private Sub Workbook_Activate()
+'Opens to the Cover Sheet
 
-'Choose which program when the workbook first opens.
-
-    Dim sh As Worksheet
+    Dim CoverSheet As Worksheet
     
-    'Check if one of the reference sheets has been renamed
-    For Each sh In ThisWorkbook.Worksheets
-        If sh.Name = "Ref Tables" Then
-            GoTo Footer
-        End If
-    Next sh
-
-    ChooseProgramForm.Show
-
-Footer:
+    Set CoverSheet = Worksheets("Cover Page")
+        CoverSheet.Activate
 
 End Sub
 

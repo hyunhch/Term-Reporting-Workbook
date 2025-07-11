@@ -130,6 +130,8 @@ Sub RosterClearButton()
         GoTo Footer
     End If
     
+    Call RemoveTable(RosterSheet)
+    
 Footer:
 
     Application.EnableEvents = True
@@ -178,6 +180,7 @@ Sub RosterParseButton()
     HeaderArray = Application.Transpose(ActiveWorkbook.Names("ColumnNamesList").RefersToRange.Value)
     
     Call ResetTableHeaders(RosterSheet, c, HeaderArray) 'This will not remove additional columns added to the right of the default ones
+    RosterSheet.Cells.ClearFormats
 
     'Find the range for the new table, break if there is nothing but the header
     Set RosterTableRange = FindTableRange(RosterSheet)
@@ -188,9 +191,13 @@ Sub RosterParseButton()
     
     'Make the new table, remove blanks and duplicates. Add formatting
     Set RosterTable = CreateTable(RosterSheet, "RosterTable", RosterTableRange)
+        If RosterTable.DataBodyRange Is Nothing Then
+            GoTo PushTotals
+        End If
+    
     Set RosterNameRange = RosterTable.ListColumns("First").DataBodyRange
     Set c = FindDuplicate(RosterNameRange)
-    
+
     j = 0
     If Not c Is Nothing Then
         j = c.Cells.Count
@@ -200,6 +207,9 @@ Sub RosterParseButton()
     Set RosterTable = RosterSheet.ListObjects(1)
     Call FormatTable(RosterSheet, RosterTable)
 
+        If RosterTable.DataBodyRange Is Nothing Then
+            GoTo PushTotals
+        End If
     'Add Marlett boxes
     Set c = RosterTable.ListColumns("Select").DataBodyRange
     Call AddMarlettBox(c)
@@ -217,6 +227,7 @@ Sub RosterParseButton()
         i = NewStudentRange.Cells.Count
     End If
 
+PushTotals:
     'Make sure there is a table on the ReportSheet
     If CheckTable(ReportSheet) > 2 Then
         Set ReportTable = CreateReportTable

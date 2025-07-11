@@ -7,6 +7,10 @@ Sub AddMarlettBox(BoxRange As Range)
     
     Dim c As Range
 
+    If BoxRange Is Nothing Then
+        GoTo Footer
+    End If
+
     With BoxRange
         .Font.Name = "Marlett"
         .HorizontalAlignment = xlRight
@@ -18,6 +22,8 @@ Sub AddMarlettBox(BoxRange As Range)
             c.ClearContents
         End If
     Next c
+
+Footer:
 
 End Sub
 
@@ -133,8 +139,8 @@ Function CreateReportTable() As ListObject
     i = 1
     
     For Each c In Range("ActivitiesList")
-        ActivityArray(i, 1) = c.Offset(0, -1).Value
-        ActivityArray(i, 2) = c.Value
+        ActivityArray(i, 1) = Trim(c.Offset(0, -1).Value)
+        ActivityArray(i, 2) = Trim(c.Value)
     
         i = i + 1
     Next c
@@ -367,6 +373,12 @@ Sub ResetTableHeaders(TargetSheet As Worksheet, TargetCell As Range, TargetField
 'Insert the default column names starting at the passed cell
 
     Dim FieldRange As Range
+    Dim i As Long
+    
+    'Trim off whitespace
+    For i = LBound(TargetFields) To UBound(TargetFields)
+        TargetFields(i) = Trim(TargetFields(i))
+    Next i
     
     Set FieldRange = TargetSheet.Range(TargetCell, TargetCell.Offset(0, UBound(TargetFields) - 1))
     FieldRange.Value = TargetFields
