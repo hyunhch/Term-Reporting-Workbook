@@ -1,0 +1,41 @@
+Version 1.0.2	
+	
+	Demographics are no longer case sensitive
+	
+	Added function to import from a previous version of the workbook
+	
+Version 1.0.1	
+	
+	Excluded "Notes" column from flagging unparsed changes on the Roster sheet
+	
+	Fixed error with sheet protection with flagging unparsed changes on the Roster sheet
+	
+	"Other" is no longer flagged red for grades
+	
+	Shortened name of "College and Career Readiness prep" to avoid error when selecting that activity
+	
+	Notes now are saved with activities and pulled into the Report sheet
+	
+	Notes are not removed if all students are deleted from an activity. This behavior may change in the future
+	
+	Fixed issue with screen updating being turned on during a subroutine
+	
+	Split "Select Activity" back into separate new and load activity buttons
+	
+	Saving a copy now includes notes
+	
+	Fixed bug when clearing the roster with only 1 student
+	
+Version 1.0	
+	
+	Dynamic roster pull can handle any number of columns, auto-populates the report sheet
+	
+	Can add a sheet with selected students, add selected students to a sheet, and remove selected students from a sheet
+	
+	Conditional formatting for number validation
+	
+	Can select which sheets to tabulate
+	
+	Save creates aggregated spreadsheet and puts all student attendence on a single sheet
+	
+	Submitting to SharePoint only creates aggregated spreadsheet 

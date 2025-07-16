@@ -1,0 +1,181 @@
+Version 1.2.5	
+	
+	Fixed error when selecting "Internship or work learning"
+	
+	Fixed error with importing when the name of practices has changed
+	
+	Fixed error where "Internship or work learning" activity numbers would not push to the report page
+	
+Version 1.2.4	
+	
+	Fix bug with tabulation
+	
+	Deleting a student from the roster now automatically retabulates student totals
+	
+	Fixed bug when parsing the roster with a single student
+	
+Version 1.2.3	
+	
+	Fixed male and female counts on Report Page being swapped
+	
+	Demographics are no longer case sensitive 
+	
+	Added function to import from a previous version of the workbook
+	
+Version 1.2.2	
+	
+	Fixed bug when deleting students from roster
+	
+	When using filters, only visible students with a check are added to an activity
+	
+	Forms now always pop up with a set size
+	
+Version 1.2.1	
+	
+	Excluded "Notes" column from flagging unparsed changes on the Roster sheet
+	
+	Fixed error with sheet protection with flagging unparsed changes on the Roster sheet
+	
+	"Other" is no longer flagged red for grades
+	
+	Shortened name of "College and Career Readiness prep" to avoid error when selecting that activity
+	
+	Notes now are saved with activities and pulled into the Report sheet
+	
+	Notes are not removed if all students are deleted from an activity. This behavior may change in the future
+	
+	Fixed issue with screen updating being turned on during a subroutine
+	
+	Split "Select Activity" back into separate new and load activity buttons
+	
+	Saving a copy now includes notes
+	
+	Fixed bug when clearing the roster with only 1 student
+	
+Version 1.20	
+	
+	Overhaul of code, increasing speed and robustness
+	
+	Report Page layout changed, rows can be selected and cleared individually
+	
+	Roster button given a green indicator for unparsed changes to student roster
+	
+	Activities are added and loaded from a "Select Activities" button that brings up a form
+	
+	Students are added to activities with a form
+	
+	Most buttons do nothing rather than throw a warning if no students are in the roster or selected
+	
+	Deleting students from the Roster now gives an option to export their attendence
+	
+	Activies now automatically pull saved attendence after removing or adding students
+	
+	Saved attendence can be manually pulled on activities
+	
+	Narrative page includes number of students per school
+	
+	Closing an Activity sheet will only prompt a save if the current selection differs from the recorded attendence 
+	
+	Cover page simplified
+	
+Version 1.14	
+	
+	Clearing the roster will also clear any previously added columns
+	
+	Practice descriptions will load on selecting from the drop-down menu
+	
+	Added 5th grade
+	
+	Fixed a bug when adding new students to roster
+	
+Version 1.13	
+	
+	Select all will not check filtered students
+	
+	Fixed error when tring to tabulate an activity that had been saved
+	
+	Transposed table for focal areas
+	
+Version 1.12	
+	
+	Dropdown list shows if an activity has any students selected
+	
+Version 1.11	
+	
+	New workbook closes after making a local save
+	
+	Attendance for local save coverted to 1's and 0's 
+	
+	Fixed popup message when saving activities
+	
+	Fixed error when trying to submit to SharePoint
+	
+Version 1.10	
+	
+	Overhaul of workbook
+	
+	Attendence and description for practices can now be stored to be revised later
+	
+	Checkboxes replaced with Marlett pseudo boxes
+	
+	Narrative page reformatted
+	
+	School, teacher, and district information is now a separate table
+	
+	RA, mentor, and staff table added. Mentor category removed from the Report Page
+	
+	Educator PD moved from Report Page to Narrative Page
+	
+	Parent PD moved from Report Page to Narrative Page
+	
+	Cover Page now only has name, date, center, save buttons, and instructions
+	
+	Activities Page added, similar to previous Cover Page. Includes buttons to save and load practices
+	
+	Name, date, and center no longer required for practices
+	
+	Activities Page has buttons to tabulate the current practice or tabulate all saved practices
+	
+	Buttons to clear or pull the student totals added to Report Page
+	
+	Other Activities page added for information that doesn't fit into Narrative Page or Report Page
+	
+	"Save" changed to "Save Copy"
+	
+	"Export" changed to "Submit Report"
+	
+	Local save now appends attendance to the roster for directors' record keeping
+	
+	"Clear Saved Practices" button to delete all saved information
+	
+Version 1.03	
+	
+	Changed "Local Save" to "Save" 
+	
+	Fixed error when pressing "Tabulate" without having any students selected
+	
+	Added "Clear Report" button to wipe report sheet
+	
+Version 1.02	
+	
+	String searches now trim whitespace
+	
+Version 1.01	
+	
+	Corrected order of ethnicity columns
+	
+	Corrected NHPI (was HNPI)
+	
+	Swapped male/female 
+	
+Version 1.0	
+	
+	Sortable and expandable student roster
+	
+	Dynamic references for the Logic Model practices, centers, and demographic categories
+	
+	Highlighting for missing or invalid values
+	
+	Checkmarked students automatically tabulated and pushed to Report sheet
+	
+	Local save and SharePoint export
