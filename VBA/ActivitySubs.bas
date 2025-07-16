@@ -326,7 +326,11 @@ Sub ActivityPullAttendance(ActivitySheet As Worksheet, LabelCell As Range)
     
     'Clear out any checks on the ActivitySheet
     Set ActivityNameRange = ActivitySheet.ListObjects(1).ListColumns("First").DataBodyRange
-        ActivityNameRange.Offset(0, -1).ClearContents
+        If ActivityNameRange Is Nothing Then
+            GoTo Footer
+        End If
+    
+    ActivityNameRange.Offset(0, -1).ClearContents
     
     'Loop through and find students marked present. See if any are missing on the ActivitySheet
     Set AttendanceRange = FindPresent(RecordsSheet, RecordsLabelCell, "All")

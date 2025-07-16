@@ -220,6 +220,8 @@ End Function
 
 Function ExportLocalSave(OldBook As Workbook, NewBook As Workbook) As Long
 'For making a local save
+'Returns 1 if successful, 2 if canceled
+'Returns 0 on error
 
     Dim CoverSheet As Worksheet
     Dim CenterString As String
@@ -247,9 +249,11 @@ Function ExportLocalSave(OldBook As Workbook, NewBook As Workbook) As Long
 
     'For Win and Mac
     If Application.OperatingSystem Like "*Mac*" Then
-        SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
+        SaveName = Application.GetSaveAsFilename(LocalPath & "/" & FileName) ', "Excel Files (*.xlsm), *.xlsm")  MacOS sandboxing can't use file filters
         If SaveName = "False" Then
             NewBook.Close savechanges:=False
+            ExportLocalSave = 2
+            
             GoTo Footer
         End If
         NewBook.SaveAs FileName:=LocalPath & "/" & FileName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
@@ -258,6 +262,8 @@ Function ExportLocalSave(OldBook As Workbook, NewBook As Workbook) As Long
         SaveName = Application.GetSaveAsFilename(LocalPath & "\" & FileName, "Excel Files (*.xlsm), *.xlsm")
         If SaveName = "False" Then
             NewBook.Close savechanges:=False
+            ExportLocalSave = 2
+            
             GoTo Footer
         End If
         NewBook.SaveAs FileName:=SaveName, FileFormat:=xlOpenXMLWorkbookMacroEnabled
@@ -477,7 +483,8 @@ End Function
 
 Function ExportSharePoint(OldBook As Workbook, NewBook As Workbook) As Long
 'Sends the cover sheet and report to SharePoint
-
+'Returns 1 if successful
+'Returns 0 on error
     Dim CoverSheet As Worksheet
     Dim CenterString As String
     Dim FileName As String
@@ -487,9 +494,9 @@ Function ExportSharePoint(OldBook As Workbook, NewBook As Workbook) As Long
     Dim SpPath As String
     Dim TempArray() As Variant
 
-    Set CoverSheet = Worksheets("Cover Page")
-
     ExportSharePoint = 0
+
+    Set CoverSheet = Worksheets("Cover Page")
 
     'Pull in center from the CoverSheet, date, and time
     CenterString = CoverSheet.Range("A:A").Find("Center", , xlValues, xlWhole).Offset(0, 1).Value

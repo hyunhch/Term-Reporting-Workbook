@@ -77,7 +77,7 @@ Function CreateTable(TargetSheet As Worksheet, Optional NewTableName As String, 
         GoTo ReturnTable
     End If
     
-    If NewTable.ListRows.Count > 1 Then
+    If Not NewTable.DataBodyRange Is Nothing Then
         Set BoxRange = NewTable.ListColumns("Select").DataBodyRange
 
         Call AddMarlettBox(BoxRange)

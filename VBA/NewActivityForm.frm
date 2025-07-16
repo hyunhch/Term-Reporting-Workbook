@@ -156,13 +156,18 @@ Sub NewActivityListBoxPopulate()
         i = 0
         For Each c In RecordsActivityRange
             If IsChecked(FindRecordsAttendance(RecordsSheet, , c), "All") = False Then
-                Set d = ActivityRefRange.Find(c.Value, , xlValues, xlWhole).Offset(0, -1) 'Category is one column behind
+                Set d = ActivityRefRange.Find(Trim(c.Value), , xlValues, xlWhole).Offset(0, -1) 'Category is one column behind
+                
+                If d Is Nothing Then
+                    GoTo NextActivity
+                End If
             
                 .AddItem c.Value
                 .List(i, 1) = d.Value
                 
                 i = i + 1
             End If
+NextActivity:
         Next c
     
     End With

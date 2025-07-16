@@ -286,7 +286,7 @@ Public Function GetLocalPath(ByVal path As String, _
     'Declare all variables that will be used in the loop over OneDrive settings
     Dim cid As String, fileNum As Long, line As Variant, parts() As String
     Dim tag As String, mainMount As String, relPath As String, email As String
-    Dim b() As Byte, n As Long, i As Long, size As Long, libNr As String
+    Dim b() As Byte, N As Long, i As Long, size As Long, libNr As String
     Dim parentID As String, folderID As String, folderName As String
     Dim folderIdPattern As String, FileName As String, folderType As String
     Dim siteID As String, libID As String, webID As String, lnkID As String
@@ -608,11 +608,11 @@ Try:    On Error GoTo Catch
                 i = InStrB(vItem + 1, s, sig2) 'Sarch byte pattern in cid.dat
                 Do While i > vItem And i < size - 168 'and confirm with another
                     If MidB$(s, i - vItem, 1) = sig1 Then 'pattern at offset
-                        i = i + 8: n = InStrB(i, s, vbNullByte) - i 'i:Start pos
-                        If n < 0 Then n = 0                         'n: Length
-                        If n > 39 Then n = 39
+                        i = i + 8: N = InStrB(i, s, vbNullByte) - i 'i:Start pos
+                        If N < 0 Then N = 0                         'n: Length
+                        If N > 39 Then N = 39
                         #If Mac Then 'StrConv doesn't work reliably on Mac ->
-                            folderID = MidB$(s, i, n)
+                            folderID = MidB$(s, i, N)
                             ansi = folderID 'Decode ANSI string manually:
                             If LenB(folderID) > 0 Then
                                 ReDim utf16(0 To LenB(folderID) * 2 - 1): k = 0
@@ -624,13 +624,13 @@ Try:    On Error GoTo Catch
                             Else: folderID = ""
                             End If
                         #Else 'Windows
-                            folderID = StrConv(MidB$(s, i, n), vbUnicode)
+                            folderID = StrConv(MidB$(s, i, N), vbUnicode)
                         #End If
-                        i = i + 39: n = InStrB(i, s, vbNullByte) - i
-                        If n < 0 Then n = 0
-                        If n > 39 Then n = 39
+                        i = i + 39: N = InStrB(i, s, vbNullByte) - i
+                        If N < 0 Then N = 0
+                        If N > 39 Then N = 39
                         #If Mac Then 'StrConv doesn't work reliably on Mac ->
-                            parentID = MidB$(s, i, n)
+                            parentID = MidB$(s, i, N)
                             ansi = parentID 'Decode ANSI string manually:
                             If LenB(parentID) > 0 Then
                                 ReDim utf16(0 To LenB(parentID) * 2 - 1): k = 0
@@ -642,14 +642,14 @@ Try:    On Error GoTo Catch
                             Else: parentID = ""
                             End If
                         #Else 'Windows
-                            parentID = StrConv(MidB$(s, i, n), vbUnicode)
+                            parentID = StrConv(MidB$(s, i, N), vbUnicode)
                         #End If
-                        i = i + 121: n = -Int(-(InStrB(i, s, sig3) - i) / 2) * 2
-                        If n < 0 Then n = 0
+                        i = i + 121: N = -Int(-(InStrB(i, s, sig3) - i) / 2) * 2
+                        If N < 0 Then N = 0
                         If folderID Like folderIdPattern _
                         And parentID Like folderIdPattern Then
                             #If Mac Then 'Encoding of folder names is UTF-32-LE
-                                utf32 = MidB$(s, i, n)
+                                utf32 = MidB$(s, i, N)
                                 'UTF-32 can only be converted manually to UTF-16
                                 ReDim utf16(LBound(utf32) To UBound(utf32))
                                 j = LBound(utf32): k = LBound(utf32)
@@ -681,7 +681,7 @@ Try:    On Error GoTo Catch
                                 Else: folderName = ""
                                 End If
                             #Else 'On Windows encoding is UTF-16-LE
-                                folderName = MidB$(s, i, n)
+                                folderName = MidB$(s, i, N)
                             #End If
                             'VBA.Array() instead of just Array() is used in this
                             'function because it ignores Option Base 1

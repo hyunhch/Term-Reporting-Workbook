@@ -45,6 +45,7 @@ Sub CoverImportButton()
     Dim FinishMessage As String
     Dim CheckArray As Variant
     Dim CopyArray As Variant
+    Dim PathArray As Variant
     
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
@@ -84,13 +85,26 @@ ShowPrompt:
         End If
     
 SkipPrompt:
-    'Choose the file to import
-    CopyFilePath = Application.GetOpenFilename("Excel Files (*.xlsm*), *xlsm*", , "Select the file to import")
+    'Choose the file to import. Different procedures for Win and MacOS
+    If Application.OperatingSystem Like "*Mac*" Then
+        PathArray = ImportSelectFileMac 'This returns an array to allow for multiple selection
+        CopyFilePath = PathArray(0)
+        'Replace colons with slashes and get rid of the drive root
+        CopyFilePath = Replace(CopyFilePath, ":", "/")
+        CopyFilePath = Replace(CopyFilePath, "Macintosh HD", "")
+        
+        If Not Len(CopyFilePath) > 0 Then
+            GoTo Footer
+        End If
+    Else
+        CopyFilePath = Application.GetOpenFilename("Excel Files (*.xlsm*), *xlsm*", , "Select the file to import")
+        
         'Clicking "cancel" or otherwise closing the selection window
         If CopyFilePath = "False" Then
             GoTo Footer
         End If
-
+    End If
+    
     Set CopyBook = Workbooks.Open(CopyFilePath)
     
     'Look for the Roster, Report, and Records sheets in the selected file
@@ -237,9 +251,9 @@ Sub CoverLocalSaveButton()
         i = ExportLocalSave(OldBook, NewBook)
     End If
     
-    If i <> 1 Then
+    If i = 0 Then
         MsgBox ("Something has gone wrong. Please restart this workbook and try again.")
-    Else
+    ElseIf i = 1 Then
         MsgBox ("Save complete.")
     End If
     
