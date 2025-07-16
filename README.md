@@ -1,3 +1,9 @@
+Version 1.3.7
+
+	Fixed bug with categories containing spaces not tabulating on MacOS
+
+	Fixed bug importing on MacOS due to the above issue
+
 Version 1.3.6	
 
 	Fixed bug with saving a local copy from the Cover Page on MacOS
