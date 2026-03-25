@@ -13,19 +13,19 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 Option Explicit
 
 Private Sub ChooseProgramNoButton_Click()
     
     ChooseProgramForm.Hide
-    
-    If Application.Workbooks.Count = 1 Then
-        Application.Quit
-    Else
-        ActiveWorkbook.Close savechanges:=False
-    End If
 
+    'Run the script to reset everthing
+    Call SetupResetWorkbook
+
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    
 End Sub
 
 Private Sub ChooseProgramYesButton_Click()
@@ -53,15 +53,15 @@ Private Sub ChooseProgramYesButton_Click()
     
     'Change to the strings we need
     If SelectionString = "College Prep" Then
-        ProgramString = "College Ref"
+        ProgramString = "College"
     ElseIf SelectionString = "Transfer Prep" Then
-        ProgramString = "Transfer Ref"
+        ProgramString = "Transfer"
     ElseIf SelectionString = "MESA University" Then
-        ProgramString = "University Ref"
+        ProgramString = "University"
     End If
     
     'Pass to the setup sub and close the form
-    Call ChooseProgram(ProgramString)
+    Call SetupPopulateWorkbook(ProgramString)
     
     ChooseProgramForm.Hide
 

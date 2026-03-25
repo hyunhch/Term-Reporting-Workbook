@@ -161,8 +161,10 @@ Function DemoTabulateMac(SearchRange As Range, SearchType As String) As Variant
         i = i + 1
     Next c
     
-    'Define the list of values to pull from
-    ListName = SearchType & "List"
+    
+    
+    'Define the list of values to pull from. Get rid of spaces in the SearchType
+    ListName = Replace(SearchType, " ", "") & "List"
     Set HeaderRange = Range(ListName)
      
      'Rename the SearchType if it's ethnicity. Resolve this problem in the future
@@ -207,6 +209,15 @@ Function DemoTabulateMac(SearchRange As Range, SearchType As String) As Variant
 MatchFound:
     Next i
     
+    'First Generation and Low Income are different in that they take "Yes" and "No"
+    If SearchType = "First Generation" Or SearchType = "Low Income" Then
+        For i = LBound(CountArray, 1) To UBound(CountArray, 1)
+            If CountArray(i, 1) = "Yes" Then
+                CountArray(i, 1) = SearchType
+            End If
+        Next i
+    End If
+    
     GoTo ReturnArray
     
 TabulateCredits:
@@ -235,109 +246,6 @@ ReturnArray:
 Footer:
 
 End Function
-
-Sub TabulateActivity(LabelCell As Range)
-'Tabulates a given activity and pushes it to the ReportSheet
-'Anything in the LabelCell row is deleted before retabulation
-'We don't tabulate from the activity sheet so that we don't tabulate unsaved changes. Everything comes from the RecordsSheet
-
-    Dim RosterSheet As Worksheet
-    Dim RecordsSheet As Worksheet
-    Dim ReportSheet As Worksheet
-    Dim RecordsLabelRange As Range
-    Dim ReportLabelRange As Range
-    Dim ReportTotalRange As Range
-    Dim TabulateRange As Range
-    Dim c As Range
-    Dim RosterTable As ListObject
-    Dim ReportTable As ListObject
-    
-    Set RecordsSheet = Worksheets("Records Page")
-    Set ReportSheet = Worksheets("Report Page")
-    Set RosterSheet = Worksheets("Roster Page")
-
-    'Make sure we have students and activities in records
-    If CheckRecords(RecordsSheet) > 1 Then
-        Call ReportClearAll
-    
-        GoTo Footer
-    'Make sure the RosterSheet has a table with students
-    ElseIf CheckTable(RosterSheet) > 2 Then
-        GoTo Footer
-    'Make sure there's a table on the ReportSheet
-    ElseIf CheckTable(ReportSheet) > 2 Then
-        Call CreateReportTable
-    End If
-    
-    Set RosterTable = RosterSheet.ListObjects(1)
-    Set ReportTable = ReportSheet.ListObjects(1)
-    
-    'Make sure the activity is in the RecordsSheet
-    Set RecordsLabelRange = FindRecordsLabel(RecordsSheet, LabelCell)
-        If RecordsLabelRange Is Nothing Then 'This shouldn't happen
-            GoTo Footer
-        End If
-
-    'Find on the ReportSheet
-    Set ReportLabelRange = FindReportLabel(ReportSheet, LabelCell)
-        If ReportLabelRange Is Nothing Then 'This shouldn't happen
-            GoTo Footer
-        End If
-        
-    'Clear out everything currently in the row
-    If RemoveFromReport(ReportLabelRange) <> 1 Then
-        GoTo Footer
-    End If
-
-    'Define the range to tabulate
-    Set TabulateRange = FindTabulateRange(RosterSheet, RecordsSheet, RecordsLabelRange)
-        If TabulateRange Is Nothing Then 'This happens when there are no students, i.e. after clearing the roster
-            GoTo Footer
-        End If
-   
-   'Pass for tabulation add Total and Notes
-   Set c = ReportTable.HeaderRowRange.Find("Total", , xlValues, xlWhole)
-   Set ReportTotalRange = ReportSheet.Cells(ReportLabelRange.Row, c.Column)
-   
-   ReportTotalRange.Value = TabulateRange.Cells.Count
-   ReportLabelRange.Offset(0, 1).Value = RecordsLabelRange.Offset(1, 0).Value 'Both are one cell away
-   Call TabulateHelper(ReportSheet, RosterSheet, ReportLabelRange, TabulateRange)
-   
-Footer:
-    Call ResetProtection
-
-End Sub
-
-Sub TabulateAll()
-'Tabulates all practices
-'Called when the roster changes or from the ReportSheet
-
-    Dim RecordsSheet As Worksheet
-    Dim ReportSheet As Worksheet
-    Dim ReportLabelRange As Range
-    Dim c As Range
-    Dim ReportTable As ListObject
-    
-    Set RecordsSheet = Worksheets("Records Page")
-    Set ReportSheet = Worksheets("Report Page")
-    Set ReportTable = ReportSheet.ListObjects(1)
-    Set ReportLabelRange = ReportTable.ListColumns("Practice").DataBodyRange
-    
-    'If there aren't students and activities, then clear the Report instead
-    If CheckRecords(RecordsSheet) <> 1 Then
-        Call ReportClearAll
-        
-        GoTo Footer
-    End If
-    
-    For Each c In ReportLabelRange
-        Call TabulateActivity(c)
-    Next c
-    
-Footer:
-    Call ResetProtection
-    
-End Sub
 
 Sub TabulateHelper(ReportSheet As Worksheet, RosterSheet As Worksheet, PasteCell As Range, Optional NameRange As Range)
 'Tabulates every category since this needs to be done both for the totals row and tabulating activities
@@ -407,16 +315,16 @@ Sub TabulateReportTotals()
     Set RecordsSheet = Worksheets("Records Page")
 
     'Make sure we have students in records
-    If CheckRecords(RecordsSheet) > 2 Then
-        Call ReportClearAll
+    If CheckRecords(RecordsSheet) <> 1 Then
+        Call ReportClearTotals
     
         GoTo Footer
     'Make sure the RosterSheet has a table with students
     ElseIf CheckTable(RosterSheet) > 2 Then
         GoTo Footer
     'Make sure there's a table on the ReportSheet with rows
-    ElseIf CheckTable(ReportSheet) > 2 Then
-        Call CreateReportTable
+    ElseIf CheckReport(ReportSheet) > 2 Then
+        Call MakeReportTable
     End If
 
     Set RosterTable = RosterSheet.ListObjects(1)
@@ -436,6 +344,62 @@ Sub TabulateReportTotals()
     'Insert total students
     c.Value = RosterTable.ListRows.Count
     
+    'Insert information from CoverSheet
+    Call ReportCoverInfo(ReportSheet)
+    
+Footer:
+
+End Sub
+
+Sub TabulateSchools(RosterSheet As Worksheet, DirectorySheet As Worksheet, RosterTable As ListObject, SchoolTable As ListObject)
+'Grabs the schools, teachers, and districts listed on the RosterSheet and tabulates them on to the DirectorySheet
+
+    Dim SchoolCol As Range
+    Dim c As Range
+    Dim i As Long
+    Dim SchoolArray As Variant
+    
+    'SchoolTable structure is:
+        'District
+        'School
+        '# Students
+        '# Teachers
+    Set SchoolCol = SchoolTable.ListColumns("School").DataBodyRange
+    
+    'Grab the information from the Roster Page
+    SchoolArray = GetRosterSchools(RosterSheet, RosterTable)
+        If IsEmpty(SchoolArray) Or Not IsArray(SchoolArray) Then
+            GoTo Footer
+        End If
+        
+    'Delete all values below the header
+    Set c = SchoolTable.HeaderRowRange.EntireColumn.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+        If c.Row > SchoolTable.HeaderRowRange.Row Then
+            DirectorySheet.Range(SchoolTable.DataBodyRange, SchoolTable.DataBodyRange.Offset(c.Row, 0)).ClearContents 'This goes past where we need, but there's no harm
+        End If
+        
+    'Resize the table
+    i = UBound(SchoolArray, 2)
+        If SchoolTable.DataBodyRange.Rows.Count <> i Then
+            SchoolTable.Resize SchoolTable.Range.Resize(i + 1)
+        End If
+    
+    'Copy over the information
+    For i = 1 To UBound(SchoolArray, 2)
+        Set c = SchoolCol(i, 1)
+        
+        c.Offset(0, -1).Value = SchoolArray(4, i)
+        c.Value = SchoolArray(1, i)
+        c.Offset(0, 1).Value = SchoolArray(2, i)
+        c.Offset(0, 2).Value = SchoolArray(3, i)
+    Next i
+
+    'Calculate totals below the table
+    Set c = SchoolCol(i, 1)
+    
+    c.Offset(0, 1).Value = Application.Sum(SchoolCol.Offset(0, 1))
+    c.Offset(0, 2).Value = Application.Sum(SchoolCol.Offset(0, 2))
+
 Footer:
 
 End Sub

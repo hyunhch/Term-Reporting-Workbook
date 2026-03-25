@@ -7,6 +7,7 @@ Sub RemoveSelectedButton()
     Dim DelSheet As Worksheet
     Dim CheckRange As Range
     Dim c As Range
+    Dim i As Long
     Dim SheetName As String
     Dim DelTable As ListObject
 
@@ -30,15 +31,21 @@ Sub RemoveSelectedButton()
     
     Select Case SheetName
         Case "Roster Page"
-            Call RemoveFromRoster(DelSheet, CheckRange.Offset(0, 1), DelTable)
+            i = RemoveFromRoster(DelSheet, CheckRange, DelTable)
             
-        Case "Report Page"
-            For Each c In CheckRange
-                Call RemoveFromReport(c.Offset(0, 2)) 'Two columns over to the practice
-            Next c
+            If i > 0 Then
+                MsgBox (i & " students removed.")
+            End If
             
-        Case Else
-            Call RemoveFromActivity(DelSheet, CheckRange.Offset(0, 1))
+            Call TabulateReportTotals
+            
+        'Case "Report Page"
+            'For Each c In CheckRange
+                'Call RemoveFromReport(c.Offset(0, 2)) 'Two columns over to the practice
+            'Next c
+            
+        'Case Else
+            'Call RemoveFromActivity(DelSheet, CheckRange.Offset(0, 1))
     End Select
     
 Footer:

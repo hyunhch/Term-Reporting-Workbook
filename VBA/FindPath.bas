@@ -3,7 +3,7 @@ Attribute VB_Name = "FindPath"
 ' Cross-platform VBA Function to get the local path of OneDrive/SharePoint
 ' synchronized Microsoft Office files (Works on Windows and on macOS)
 '
-' Author: Guido Witt-Dörring
+' Author: Guido Witt-Dšrring
 ' Created: 2022/07/01
 ' Updated: 2023/03/27
 ' License: MIT
@@ -13,7 +13,7 @@ Attribute VB_Name = "FindPath"
 ' https://stackoverflow.com/a/73577057/12287457
 ' ----------------------------------------------------------------
 '
-' Copyright (c) 2022 Guido Witt-Dörring
+' Copyright (c) 2022 Guido Witt-Dšrring
 '
 ' MIT License:
 ' Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -232,7 +232,7 @@ Option Explicit
 'C:\users\username\OneDrive\ on Windows; or /Users/username/OneDrive/ on MacOS,
 'if you have the remote directory locally synchronized with the OneDrive app.
 'If no local path can be found, the input value will be returned unmodified.
-'Author: Guido Witt-Dörring
+'Author: Guido Witt-Dšrring
 'Source: https://gist.github.com/guwidoe/038398b6be1b16c458365716a921814d
 '        https://stackoverflow.com/a/73577057/12287457
 Public Function GetLocalPath(ByVal path As String, _

@@ -1,62 +1,43 @@
 Attribute VB_Name = "CheckSubs"
 Option Explicit
 
-Function CheckAttendance(RecordsSheet As Worksheet, NameCell As Range, Optional CountAbsent As String) As Long
-'Returns 1 if the passed student was present for anything, 0 otherwise
-'Passing "Absent" will consider both present (1) and absent (0) as attending
-
-    Dim AttendanceRange As Range
-    Dim i As Long
-    
-    Set AttendanceRange = FindRecordsAttendance(RecordsSheet, NameCell)
-    
-    'Either sum or count cells with a number in them
-    If Not AttendanceRange Is Nothing Then
-        i = WorksheetFunction.Sum(AttendanceRange)
-    ElseIf Not AttendanceRange Is Nothing And CountAbsent = "Absent" Then
-        i = WorksheetFunction.CountA(AttendanceRange)
-    Else
-        GoTo Footer
-    End If
-
-    'Return a binary answer
-    If i > 0 Then
-        i = 1
-    End If
-    
-    CheckAttendance = i
-
-Footer:
-    
-End Function
-
 Function CheckCover() As Long
 'Returns 1 if all of the information is filled out on the CoverSheet
+'Returns 0 if one or more missing
 
     Dim CoverSheet As Worksheet
+    Dim RefRange As Range
+    Dim SearchCell As Range
     Dim c As Range
     Dim i As Long
     Dim SearchString As String
     Dim SearchArray() As Variant
     
     Set CoverSheet = Worksheets("Cover Page")
-    
-    ReDim SearchArray(1 To 3)
-    SearchArray(1) = "Name"
-    SearchArray(2) = "Date"
-    SearchArray(3) = "Center"
-
-    CheckCover = 0
-
-    For i = 1 To UBound(SearchArray)
-        SearchString = SearchArray(i)
-        Set c = CoverSheet.Range("A:A").Find(SearchString, , xlValues, xlWhole).Offset(0, 1)
-        
-        If Len(c.Value) < 1 Then
+    Set RefRange = Range("CoverTextList")
+        If RefRange Is Nothing Then
             GoTo Footer
         End If
-    Next i
-
+        
+    CheckCover = 0
+    
+    'The reference table tells each string, one to the right is where it's placed on the CoverSheet
+    'The cell one to the right on the CoverSheetshould have something in it
+    For Each c In RefRange
+        If c.Value = "Title" Or c.Value = "Version" Then
+            GoTo NextSearch
+        End If
+        
+        Set SearchCell = CoverSheet.Range(c.Offset(0, 1).Value)
+        
+        SearchString = SearchCell.Offset(0, 1).Value
+        If Not Len(SearchString) > 0 Then
+            GoTo Footer
+        End If
+        
+NextSearch:
+    Next c
+    
     'If nothing failed
     CheckCover = 1
 
@@ -71,22 +52,20 @@ Function CheckRA(DirectorySheet As Worksheet) As Long
 End Function
 
 Function CheckRecords(RecordsSheet As Worksheet) As Long
-'Checks if there are any students on the Records Page
-'Three possibilities:
-    '1 Students and recorded activities
-    '2 Students but no activities
-    '3 Neither activities nor students
+'Two possibilities:
+'1 - Students
+'2 - No students
 
-    Dim AttendanceRange As Range
+    Dim LRowCell As Range
+
+    Set LRowCell = RecordsSheet.Range("A:A").Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
     
-    Set AttendanceRange = FindRecordsAttendance(RecordsSheet)
-
-    If AttendanceRange Is Nothing Then
-        CheckRecords = 3
-    ElseIf IsChecked(AttendanceRange, "All") = False Then 'Students but no saved activities
+    If LRowCell Is Nothing Then
+        GoTo Footer
+    ElseIf LRowCell.Value = "H BREAK" Then
         CheckRecords = 2
     Else
-        CheckRecords = 1 'Students and saved activities
+        CheckRecords = 1
     End If
 
 Footer:
@@ -95,40 +74,37 @@ End Function
 
 Function CheckReport(ReportSheet As Worksheet) As Long
 'Ensures that at least the totals row has been filled out
-'Three possibilities:
-    '1 Totals and activities
-    '2 Totals only
-    '3 Empty
-    '4 No table or only headers. This shouldn't happnen
+'Four possibilities:
+    '1 Totals
+    '2 Empty
+    '3 No ListRow
+    '4 No table
 
-    Dim TotalHeader As Range
     Dim c As Range
-    Dim TotalsColumn As Range
     Dim ReportTable As ListObject
     
-    'Check if there's a table with rows. There always should be
-    If CheckTable(ReportSheet) > 3 Then
+    'Check if there's a table. There always should be
+    If Not ReportSheet.ListObjects.Count > 0 Then
         CheckReport = 4
         
         GoTo Footer
     End If
     
-    'See if there is a value in the row below the Totals column
+    'Check for a ListRow
     Set ReportTable = ReportSheet.ListObjects(1)
-    Set TotalHeader = FindTableHeader(ReportSheet, "Total")
     
-    If Not Len(TotalHeader.Offset(1, 0)) > 0 Then
+    If Not ReportTable.ListRows.Count > 0 Then 'Maybe have an option for if there are too many rows. There should only be one
         CheckReport = 3
         
         GoTo Footer
-    Else
-        CheckReport = 2
     End If
     
-    'See of there are any activities
-    Set c = ReportTable.ListColumns("Total").DataBodyRange.Find("*", SearchOrder:=xlByRows, SearchDirection:=xlPrevious)
+    'See if there is a value in the row below the Totals column
+    Set c = ReportTable.ListColumns("Total").DataBodyRange
     
-    If Not c.Address = TotalHeader.Offset(1, 0).Address Then
+    If Not Len(c.Value) > 0 Then
+        CheckReport = 2
+    Else
         CheckReport = 1
     End If
 
@@ -139,50 +115,41 @@ End Function
 Function CheckTable(TargetSheet As Worksheet) As Long
 'Checks that there is a table, that there is at least one list row, and that there is at least one row checked
 'Report sheet will need an additional check since there are two rows at the top
-    '1 -> Table, rows, checks
-    '2 -> Table, rows
-    '3 -> Table
-    '4 -> None
-'Return a null value if there's an error
+'1 -> Table, rows, checks
+'2 -> Table, rows
+'3 -> Table
+'4 -> None
+'Return an null value if there's an error
 
     Dim TargetCheckRange As Range
     Dim i As Long
-    Dim j As Long
     Dim TargetTable As ListObject
     Dim TableHasCheck As Boolean
     
     'Is there a table
-    If TargetSheet.ListObjects.Count < 1 Then
+    If Not TargetSheet.ListObjects.Count > 0 Then
         i = 4
+        
         GoTo Footer
     End If
     
-    'Are there rows
-    If TargetSheet.Name = "Report Page" Then 'Two rows at the top for the ReportSheet
-        j = 2
-    Else
-        j = 1
+    If TargetSheet.Name = "Report Page" Then 'Use separate function
+        Err.Raise vbObjectError + 513, , "Wrong function"
+        
+        GoTo Footer
     End If
     
     Set TargetTable = TargetSheet.ListObjects(1)
-    If TargetTable.ListRows.Count < j Then
+    
+    'Are there rows
+    If Not TargetTable.ListRows.Count > 0 Then
         i = 3
-        GoTo Footer
-    End If
-    
-    'Are there checks or is a table without that column
-    If TargetTable.HeaderRowRange.Find("Select", , xlValues, xlWhole) Is Nothing Then
-         i = 2
-        GoTo Footer
-    End If
-    
-    TableHasCheck = IsChecked(TargetTable.ListColumns("Select").DataBodyRange)
-    If TableHasCheck = False Then
+    'Are there checks
+    ElseIf IsChecked(TargetTable.ListColumns("Select").DataBodyRange) = False Then
         i = 2
-        GoTo Footer
+    Else
+        i = 1
     End If
-    
-    i = 1
     
 Footer:
     CheckTable = i

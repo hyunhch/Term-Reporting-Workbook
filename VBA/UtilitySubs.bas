@@ -1,6 +1,32 @@
 Attribute VB_Name = "UtilitySubs"
 Option Explicit
 
+Sub AddMarlettBox(BoxRange As Range)
+'Doing this instead of actual checkboxes to deal with sorting issues
+'This only changes the font of a range to Marlett
+    
+    Dim c As Range
+
+    If BoxRange Is Nothing Then
+        GoTo Footer
+    End If
+
+    With BoxRange
+        .Font.Name = "Marlett"
+        .HorizontalAlignment = xlRight
+    End With
+    
+    'Preserve checks, but get rid of anything other than an "a"
+    For Each c In BoxRange
+        If c.Value <> "a" Then
+            c.ClearContents
+        End If
+    Next c
+
+Footer:
+
+End Sub
+
 Function BuildRange(NewCell As Range, Optional OldRange As Range) As Range
 'A function for building ranges cell by cell
 'This may be slower
@@ -61,43 +87,6 @@ Sub ClearSheet(TargetSheet As Worksheet, Optional TargetRange As Range)
 
 End Sub
 
-Sub ClearSheetOld(TargetSheet As Worksheet, Optional ShowWarning As String, Optional DelStart As Range)
-'Clears everything on a sheet and deletes tables
-'Passing "Warn" prompts a confirmation for deletion
-'Passing a range deletes everything to the right and below
-
-    Dim DelRange As Range
-    Dim DelConfirm As Long
-    Dim DelTable As ListObject
-    
-    'Warning prompt
-    If ShowWarning = "Yes" Then
-        DelConfirm = MsgBox("Are you sure you want to clear all content?" & vbCrLf & _
-            "This cannot be undone.", vbQuestion + vbYesNo + vbDefaultButton2, "")
-    Else
-        DelConfirm = vbYes
-    End If
-
-    'If DelRange was passed, only delete from that point to the right and down
-    If Not DelStart Is Nothing Then
-        Set DelRange = TargetSheet.Range(DelStart, Cells(TargetSheet.Rows.Count, TargetSheet.Columns.Count).Address)
-    Else
-        Set DelRange = TargetSheet.Cells
-    End If
-
-    'Delete content and formats
-    If DelConfirm = vbYes Then
-        Call RemoveTable(TargetSheet)
-        
-        With DelRange
-            .ClearContents
-            .ClearFormats
-            .Validation.Delete
-        End With
-    End If
-
-End Sub
-
 Sub DateValidation(TargetSheet As Worksheet, DateRange As Range)
 'Date greater than 1990
 
@@ -151,6 +140,73 @@ Sub MakeDropdown(TargetSheet As Worksheet, TargetRange As Range, TargetList As S
     End With
     
 End Sub
+
+Function NudgeToColumn(SourceSheet As Worksheet, SourceRange As Range, ColNum As Long) As Range
+'Shifts a range to the passed column number
+'Returns nudged range
+'Returns nothing on error
+
+    Dim NudgeRange As Range
+    Dim c As Range
+    
+    'Validate passed variables
+    If SourceRange Is Nothing Then
+        GoTo Footer
+    ElseIf Not ColNum > 0 Then
+        GoTo Footer
+    End If
+    
+    'If nothing needs to be nudged
+    If SourceRange.Column = ColNum Then
+        Set NudgeToColumn = SourceRange
+    
+        GoTo Footer
+    End If
+
+    'Intersect of the range rows and the target column
+    Set c = SourceSheet.Cells(1, ColNum)
+    Set NudgeRange = Intersect(SourceRange.EntireRow, c.EntireColumn)
+    
+    If Not NudgeRange Is Nothing Then
+        Set NudgeToColumn = NudgeRange
+    End If
+
+Footer:
+
+End Function
+
+Function NudgeToHeader(SourceSheet As Worksheet, SourceRange As Range, HeaderName As String) As Range
+'Shifts a range to a table column with the passed header
+'Returns nudged range
+'Returns nothing on error
+
+    Dim TargetHeader As Range
+    Dim TargetRange As Range
+    Dim SourceTable As ListObject
+    
+    Set SourceTable = SourceSheet.ListObjects(1)
+
+    Set TargetHeader = FindTableHeader(SourceSheet, HeaderName)
+        If TargetHeader Is Nothing Then
+            GoTo Footer
+        ElseIf TargetHeader.Column = SourceRange.Column Then 'If it's already in the same column
+            Set TargetRange = SourceRange
+            
+            GoTo ReturnRange
+        End If
+    
+    Set TargetRange = Intersect(SourceRange.EntireRow, SourceTable.ListColumns(HeaderName).DataBodyRange) 'Not using offset to avoid swapping the sign of the # columns in .Offset()
+        If TargetRange Is Nothing Then
+            GoTo Footer
+        End If
+    
+ReturnRange:
+    Set NudgeToHeader = TargetRange
+        
+Footer:
+
+End Function
+
 
 Sub ResetProtection()
 'Reset all sheet protections
@@ -207,5 +263,22 @@ Sub UnprotectSheet(TargetSheet As Worksheet)
     If TargetSheet.ProtectContents = True Then
         TargetSheet.Unprotect
     End If
+
+End Sub
+
+Sub WipeSheet(TargetSheet As Worksheet)
+'Takes everything off the passed sheet, including buttons
+
+    On Error Resume Next
+    
+    Call UnprotectSheet(TargetSheet)
+    With TargetSheet
+        .Cells.ClearContents
+        .Cells.ClearFormats
+        .Buttons.Delete
+        .Columns.UseStandardWidth = True
+    End With
+
+    On Error GoTo 0
 
 End Sub

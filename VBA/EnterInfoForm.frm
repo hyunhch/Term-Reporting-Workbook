@@ -13,13 +13,18 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 Option Explicit
 
 Private Sub EnterInfoNoButton_Click()
 
     EnterInfoForm.Hide
-    ActiveWorkbook.Close savechanges:=False
+
+    'Run the script to reset everthing
+    Call ResetWorkbook
+
+    Application.EnableEvents = True
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
     
 End Sub
 
@@ -90,18 +95,18 @@ Footer:
 End Sub
 
 Private Sub UserForm_Activate()
+'To populate the Cover Page, triggered after the program is selected
+
+    Dim c As Range
 
     EnterInfoForm.Height = 191
     EnterInfoForm.Width = 242
 
-End Sub
+    'Clear out the dropdown box and repopulate
+    Me.EnterInfoNameBox.Value = ""
+    Me.EnterInfoDateBox.Value = ""
+    Me.EnterInfoCenterComboBox.Clear
 
-
-Private Sub UserForm_Initialize()
-'To populate the Cover Page, triggered after the program is selected
-
-    Dim c As Range
-    
     For Each c In Range("CentersList")
         Me.EnterInfoCenterComboBox.AddItem c.Value
     Next c
