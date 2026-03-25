@@ -30,15 +30,10 @@ Version 1.3.5
 	
 Version 1.3.4	
 	Added import function on Cover Page
-	
-	
-	
 	Only visible cells are checked when pressing "Select all"
 	The Report Sheet does not need an activity to export to SharePoint. Totals only are acceptable 
 	Fixed bug where blank credit hours would break tabulation
 	Issues with whitespace fixed (hopefully all of them)
-	
-	
 	Generated version number no longer pulls from the file name, to avoid problems if the workbook is renamed
 	"Mathematics" changes to "Math" on the Report Page
 	Support for MacOS, which cannot use dictionary objects. Procedures will now work on Mac, though they are slower
